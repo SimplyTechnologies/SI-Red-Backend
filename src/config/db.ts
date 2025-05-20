@@ -1,7 +1,7 @@
 import { Sequelize } from "sequelize";
-import dotenv from "dotenv";
+import {config} from "dotenv";
 
-dotenv.config();
+config();
 
 export const sequelize = new Sequelize(
   process.env.DB_NAME as string,
@@ -11,7 +11,7 @@ export const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
     dialect: "postgres",
-    logging: false, 
+    logging: process.env.NODE_ENV === 'development' ? console.log : false, 
   }
 );
 

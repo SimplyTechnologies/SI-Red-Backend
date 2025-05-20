@@ -1,7 +1,6 @@
 import { Controller, Post, Route, Tags, Body } from 'tsoa';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.model';
-// import { Request as ExpressRequest } from 'express';
 
 interface RefreshRequest {
     refreshToken: string;
