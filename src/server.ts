@@ -1,29 +1,64 @@
-import express, { Request, Response } from "express";
-import { RegisterRoutes } from "./routes/routes"; // that is tsoa generated file
-import swaggerUi from "swagger-ui-express";
-import * as swaggerDocument from "../dist/swagger.json"; // that is tsoa generated file
-import cors from "cors";
+import express, { NextFunction, Request, Response } from 'express';
+import { RegisterRoutes } from './routes/routes'; // that is tsoa generated file
+import { signInValidationRules } from './validations/auth.validation';
+import { validateRequest } from './middlewares/validateRequest';
+import swaggerUi from 'swagger-ui-express';
+import * as swaggerDocument from '../dist/swagger.json'; // that is tsoa generated file
+import cors from 'cors';
+import { testDbConnection } from './config/db';
+import { config } from 'dotenv';
+import passport from './config/passport';
+import cookieParser from 'cookie-parser';
+import { errorHandler } from './middlewares/errorHandler';
+
+config();
 
 const app = express();
-const PORT = 3000; // TODO: refactor using dotenv
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors());
+app.use(cookieParser());
+app.use(passport.initialize());
+
+// DB connectoin
+(async () => {
+    await testDbConnection();
+})();
+
+app.post(
+    '/auth/signin',
+    signInValidationRules,
+    validateRequest,
+    (req: Request, res: Response, next:NextFunction) => {
+        next(); 
+    }
+);
 
 RegisterRoutes(app);
 
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.get("/swagger.json", (_req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.send(swaggerDocument);
+app.get('/swagger.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerDocument);
 });
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello TypeScript with Express!");
+app.get('/', (req: Request, res: Response) => {
+    res.send('Hello TypeScript with Express!');
 });
+
+app.get(
+    '/protected',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        res.json({ message: 'You are authenticated', user: req.user });
+    }
+);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-  console.log(`Swagger docs at http://localhost:${PORT}/docs`);
+    console.log(`Server is running at http://localhost:${PORT}`);
+    console.log(`Swagger docs at http://localhost:${PORT}/docs`);
 });
