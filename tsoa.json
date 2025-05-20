@@ -1,13 +1,15 @@
 {
-  "entryFile": "src/server.ts",
-  "controllerPathGlobs": ["src/controllers/*.ts"],
-  "spec": {
-    "outputDirectory": "dist",
-    "outputFile": "swagger.json",
-    "specVersion": 3,
-    "basePath": ""
-  },
-  "routes": {
-    "routesDir": "src/routes"
-  }
+    "controllerPathGlobs": ["src/controllers/*.ts"],
+    "routes": {
+        "routesDir": "src/routes",
+        "middleware": "express"
+    },
+    "spec": {
+        "outputDirectory": "dist",
+        "specVersion": 3
+    },
+    "noImplicitAdditionalProperties": "throw-on-extras",
+    "controller": {
+        "useRequest": true
+    }
 }
