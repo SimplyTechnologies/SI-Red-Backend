@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "ts-node-dev src/server.ts",
     "tsoa": "tsoa spec && tsoa routes",
-    "start": "npm run tsoa && npm run dev",
-    "seed:superuser": "ts-node src/seed/superuser.ts"
+    "seed:superuser": "ts-node src/seed/superuser.ts",
+    "start": "node dist/server.js",
+    "build": "npm run tsoa && tsc"
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,7 @@
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
+    "@types/joi": "^17.2.3",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.15.19",
     "@types/passport-jwt": "^4.0.1",
