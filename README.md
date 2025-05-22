@@ -34,5 +34,8 @@ npm run dev
 or
 node dist/server.js
 
-This will start the server using ts-node-dev with hot reloading enabled.
+You must run this after adding or modifying any controller:
 
+npx tsoa routes
+
+This will start the server using ts-node-dev with hot reloading enabled.

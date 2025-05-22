@@ -3,6 +3,12 @@ import { sequelize } from "../config/db";
 import { Model as CarModel } from "./Model.model";
 import { User } from "./User.model";
 
+interface VehicleCreationAttributes
+  extends Optional<
+    VehicleAttributes,
+    "id" | "createdAt" | "updatedAt" | "deletedAt"
+  > {}
+
 interface VehicleAttributes {
   id: string;
   model_id: number;
@@ -20,7 +26,7 @@ interface VehicleAttributes {
 }
 
 export class Vehicle
-  extends SequelizeModel<VehicleAttributes>
+  extends SequelizeModel<VehicleAttributes, VehicleCreationAttributes>
   implements VehicleAttributes
 {
   public id!: string;

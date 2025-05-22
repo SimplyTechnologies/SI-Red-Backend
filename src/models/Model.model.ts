@@ -1,7 +1,6 @@
 import { DataTypes, Model as SequelizeModel, Optional } from "sequelize";
 import { sequelize } from "../config/db";
 import { Make } from "./Make.model";
-import { Vehicle } from "./Vehicle.model";
 
 interface ModelAttributes {
   id: number;
@@ -52,4 +51,4 @@ Model.init(
 Model.belongsTo(Make, { foreignKey: "make_id", as: "make" });
 
 // ✅ One Model has many Vehicles
-Model.hasMany(Vehicle, { foreignKey: "model_id", as: "vehicles" });
+// Model.hasMany(Vehicle, { foreignKey: "model_id", as: "vehicles" });

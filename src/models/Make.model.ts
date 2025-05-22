@@ -1,6 +1,5 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/db";
-import { Model as CarModel } from "./Model.model"; // CarModel to avoid name conflict
 
 interface MakeAttributes {
   id: number;
@@ -38,4 +37,4 @@ Make.init(
 );
 
 // ✅ One Make has many Models
-Make.hasMany(CarModel, { foreignKey: "make_id", as: "models" });
+// Make.hasMany(CarModel, { foreignKey: "make_id", as: "models" });

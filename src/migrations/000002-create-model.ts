@@ -21,6 +21,8 @@ export async function up(
         model: "makes",
         key: "id",
       },
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
     },
   });
 }

@@ -1,55 +1,82 @@
-import { Request, Response } from "express";
-import { Vehicle } from "../models/Vehicle.model";
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Path,
+  Put,
+  Delete,
+  Route,
+  Tags,
+  SuccessResponse,
+} from "tsoa";
+import VehicleService from "../services/VehicleService";
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: string };
+interface VehicleInput {
+  model_id: number;
+  year: string;
+  vin: string;
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  zipcode: string;
+  user_id: string;
 }
 
-export const createVehicle = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
-  try {
-    const user = req.user;
-    if (!user) return res.status(401).json({ message: "Unauthorized" });
+interface VehicleResponse {
+  id: string;
+  model_id: number;
+  year: string;
+  vin: string;
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  zipcode: string;
+  user_id: string;
+}
 
-    const { model_id, year, vin, street, city, state, country, zipcode } =
-      req.body;
-
-    // Optional: field validation
-    if (
-      !model_id ||
-      !year ||
-      !vin ||
-      !street ||
-      !city ||
-      !state ||
-      !country ||
-      !zipcode
-    ) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    // const newVehicle = await Vehicle.create({
-    //   model_id,
-    //   year,
-    //   vin,
-    //   user_id: user.id,
-    //   street,
-    //   city,
-    //   state,
-    //   country,
-    //   zipcode,
-    // });
-
-    // res.status(201).json(newVehicle);
-  } catch (error: any) {
-    console.error("Vehicle creation error:", error);
-
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(409).json({ message: "VIN already exists" });
-    }
-
-    res.status(500).json({ message: "Internal Server Error" });
+@Route("vehicles")
+@Tags("Vehicle")
+export class VehicleController extends Controller {
+  @Post("/")
+  @SuccessResponse("201", "Created")
+  public async createVehicle(
+    @Body() requestBody: VehicleInput
+  ): Promise<VehicleResponse> {
+    const newVehicle = await VehicleService.createVehicle(requestBody);
+    this.setStatus(201);
+    return newVehicle;
   }
-};
+
+  @Get("/")
+  public async getVehicles(): Promise<VehicleResponse[]> {
+    const vehicles = await VehicleService.getAllVehicles();
+    return vehicles.map((v: any) => v.get({ plain: true }));
+  }
+
+  @Get("/{id}")
+  public async getVehicle(@Path() id: number): Promise<VehicleResponse> {
+    const vehicle = await VehicleService.getVehicleById(id);
+    if (!vehicle) {
+      this.setStatus(404);
+      throw new Error("Vehicle not found");
+    }
+    return vehicle.get({ plain: true });
+  }
+
+  @Put("/{id}")
+  public async updateVehicle(
+    @Path() id: number,
+    @Body() updateData: Partial<VehicleInput>
+  ): Promise<VehicleResponse> {
+    const updated = await VehicleService.updateVehicle(id, updateData);
+    return updated.get({ plain: true });
+  }
+
+  @Delete("/{id}")
+  public async deleteVehicle(@Path() id: number): Promise<{ message: string }> {
+    return await VehicleService.deleteVehicle(id);
+  }
+}
