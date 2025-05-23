@@ -1,4 +1,4 @@
-import { Model } from "../models/Model.model";
+import { Model } from '../models/Model.model';
 
 class ModelService {
   async getAllModelsByMakeId(id: number) {
@@ -7,16 +7,13 @@ class ModelService {
     });
 
     if (!models) {
-      throw new Error("Models not found");
+      throw new Error('Models not found');
     }
 
     return models;
   }
 
-  async getOrCreateModelIdByName(
-    name: string,
-    make_id: number
-  ): Promise<number> {
+  async getOrCreateModelIdByName(name: string, make_id: number): Promise<number> {
     let model = await Model.findOne({ where: { name, make_id } });
 
     if (!model) {

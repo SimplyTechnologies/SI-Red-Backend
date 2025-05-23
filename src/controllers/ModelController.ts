@@ -1,5 +1,5 @@
-import { Controller, Get, Query, Route, Tags, Path, Post } from "tsoa";
-import ModelService from "../services/ModelService";
+import { Controller, Get, Query, Route, Tags, Path } from 'tsoa';
+import ModelService from '../services/ModelService';
 
 interface ModelResponse {
   id: number;
@@ -7,20 +7,18 @@ interface ModelResponse {
   make_id: number;
 }
 
-@Route("models")
-@Tags("Model")
+@Route('models')
+@Tags('Model')
 export class ModelController extends Controller {
-  @Get("bymake/{id}")
-  public async getAllModelsByMakeId(
-    @Path() id: number
-  ): Promise<ModelResponse[]> {
+  @Get('bymake/{id}')
+  public async getAllModelsByMakeId(@Path() id: number): Promise<ModelResponse[]> {
     const models = await ModelService.getAllModelsByMakeId(id);
     const plainModels = models.map((model) => model.get({ plain: true }));
 
     return plainModels;
   }
 
-  @Get("/find-or-create-model")
+  @Get('/find-or-create-model')
   public async getOrCreateModelId(
     @Query() name: string,
     @Query() make_id: number

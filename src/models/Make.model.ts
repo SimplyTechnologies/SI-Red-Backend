@@ -1,17 +1,14 @@
-import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/db";
+import { DataTypes, Model, Optional } from 'sequelize';
+import { sequelize } from '../config/db';
 
 interface MakeAttributes {
   id: number;
   name: string;
 }
 
-interface MakeCreationAttributes extends Optional<MakeAttributes, "id"> {}
+type MakeCreationAttributes = Optional<MakeAttributes, 'id'>;
 
-export class Make
-  extends Model<MakeAttributes, MakeCreationAttributes>
-  implements MakeAttributes
-{
+export class Make extends Model<MakeAttributes, MakeCreationAttributes> implements MakeAttributes {
   public id!: number;
   public name!: string;
 }
@@ -30,8 +27,8 @@ Make.init(
   },
   {
     sequelize,
-    modelName: "Make",
-    tableName: "makes",
+    modelName: 'Make',
+    tableName: 'makes',
     timestamps: false,
   }
 );

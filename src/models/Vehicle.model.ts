@@ -1,13 +1,9 @@
-import { DataTypes, Model as SequelizeModel, Optional } from "sequelize";
-import { sequelize } from "../config/db";
-import { Model as CarModel } from "./Model.model";
-import { User } from "./User.model";
+import { DataTypes, Model as SequelizeModel, Optional } from 'sequelize';
+import { sequelize } from '../config/db';
+import { Model as CarModel } from './Model.model';
+import { User } from './User.model';
 
-interface VehicleCreationAttributes
-  extends Optional<
-    VehicleAttributes,
-    "id" | "createdAt" | "updatedAt" | "deletedAt"
-  > {}
+type VehicleCreationAttributes = Optional<VehicleAttributes, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
 
 interface VehicleAttributes {
   id: string;
@@ -60,16 +56,16 @@ Vehicle.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "models",
-        key: "id",
+        model: 'models',
+        key: 'id',
       },
     },
     user_id: {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
     },
     year: {
@@ -104,18 +100,18 @@ Vehicle.init(
     status: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "in stock",
+      defaultValue: 'in stock',
     },
     location: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "",
+      defaultValue: '',
     },
   },
   {
     sequelize,
-    modelName: "Vehicle",
-    tableName: "vehicles",
+    modelName: 'Vehicle',
+    tableName: 'vehicles',
     paranoid: true, // for soft deletes
     timestamps: true,
   }
@@ -123,12 +119,12 @@ Vehicle.init(
 
 // ✅ One Vehicle belongs to one Model
 Vehicle.belongsTo(CarModel, {
-  foreignKey: "model_id",
-  as: "model",
+  foreignKey: 'model_id',
+  as: 'model',
 });
 
 // ✅ One Vehicle belongs to one User
 Vehicle.belongsTo(User, {
-  foreignKey: "user_id",
-  as: "user",
+  foreignKey: 'user_id',
+  as: 'user',
 });

@@ -1,4 +1,4 @@
-import { Make } from "../models/Make.model";
+import { Make } from '../models/Make.model';
 
 class MakeService {
   async getAllMakes() {
@@ -19,7 +19,7 @@ class MakeService {
     const make = await Make.findByPk(id);
 
     if (!make) {
-      throw new Error("Make not found");
+      throw new Error('Make not found');
     }
 
     return make;

@@ -1,14 +1,7 @@
-import {
-  QueryInterface,
-  DataTypes,
-  Sequelize as SequelizeType,
-} from "sequelize";
+import { QueryInterface, DataTypes, Sequelize as SequelizeType } from 'sequelize';
 
-export async function up(
-  queryInterface: QueryInterface,
-  Sequelize: SequelizeType
-) {
-  await queryInterface.createTable("vehicles", {
+export async function up(queryInterface: QueryInterface, Sequelize: SequelizeType) {
+  await queryInterface.createTable('vehicles', {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -19,21 +12,21 @@ export async function up(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "models",
-        key: "id",
+        model: 'models',
+        key: 'id',
       },
-      onUpdate: "CASCADE",
-      onDelete: "SET NULL",
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
     },
     user_id: {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE",
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
     },
     year: {
       type: DataTypes.STRING,
@@ -67,22 +60,22 @@ export async function up(
     status: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "in stock",
+      defaultValue: 'in stock',
     },
     location: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "",
+      defaultValue: '',
     },
     createdAt: {
       allowNull: false,
       type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
     },
     updatedAt: {
       allowNull: false,
       type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
     },
     deletedAt: {
       type: DataTypes.DATE,
@@ -92,5 +85,5 @@ export async function up(
 }
 
 export async function down(queryInterface: QueryInterface) {
-  await queryInterface.dropTable("vehicles");
+  await queryInterface.dropTable('vehicles');
 }

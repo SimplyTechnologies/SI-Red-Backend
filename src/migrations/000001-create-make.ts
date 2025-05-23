@@ -1,10 +1,7 @@
-import { QueryInterface, DataTypes } from "sequelize";
+import { QueryInterface, DataTypes } from 'sequelize';
 
-export async function up(
-  queryInterface: QueryInterface,
-  Sequelize: typeof DataTypes
-) {
-  await queryInterface.createTable("makes", {
+export async function up(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+  await queryInterface.createTable('makes', {
     id: {
       type: Sequelize.INTEGER,
       autoIncrement: true,
@@ -17,9 +14,6 @@ export async function up(
   });
 }
 
-export async function down(
-  queryInterface: QueryInterface,
-  Sequelize: typeof DataTypes
-) {
-  await queryInterface.dropTable("makes");
+export async function down(queryInterface: QueryInterface) {
+  await queryInterface.dropTable('makes');
 }

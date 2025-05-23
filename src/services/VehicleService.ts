@@ -1,4 +1,4 @@
-import { Vehicle } from "../models/Vehicle.model";
+import { Vehicle } from '../models/Vehicle.model';
 
 export interface VehicleInput {
   model_id: number;
@@ -18,8 +18,8 @@ class VehicleService {
   async createVehicle(data: VehicleInput) {
     const vehicleData = {
       ...data,
-      status: data.status ?? "in stock",
-      location: data.location ?? "",
+      status: data.status ?? 'in stock',
+      location: data.location ?? '',
     };
 
     return await Vehicle.create(vehicleData);
@@ -36,16 +36,16 @@ class VehicleService {
   async deleteVehicle(id: string) {
     const vehicle = await Vehicle.findByPk(id);
     if (!vehicle) {
-      throw new Error("Vehicle not found");
+      throw new Error('Vehicle not found');
     }
     await vehicle.destroy();
-    return { message: "Vehicle deleted successfully" };
+    return { message: 'Vehicle deleted successfully' };
   }
 
   async updateVehicle(id: string, updateData: Partial<VehicleInput>) {
     const vehicle = await Vehicle.findByPk(id);
     if (!vehicle) {
-      throw new Error("Vehicle not found");
+      throw new Error('Vehicle not found');
     }
     await vehicle.update(updateData);
     return vehicle;

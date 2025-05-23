@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 class VinService {
   async decodeVin(vin: string) {
@@ -8,8 +8,8 @@ class VinService {
 
     const result = response.data?.Results?.[0];
 
-    if (!result || result.Make === "") {
-      throw new Error("Invalid VIN or no data found");
+    if (!result || result.Make === '') {
+      throw new Error('Invalid VIN or no data found');
     }
 
     return {
