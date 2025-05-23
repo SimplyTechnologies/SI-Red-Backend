@@ -1,4 +1,5 @@
 import { Body, Controller, Post, Route, Tags, SuccessResponse } from 'tsoa';
+import { validationResult } from 'express-validator';
 import { AuthService } from '../services/AuthService';
 
 export interface SignInRequest {

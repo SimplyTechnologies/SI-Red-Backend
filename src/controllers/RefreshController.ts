@@ -1,7 +1,6 @@
 import { Controller, Post, Route, Tags, Body } from 'tsoa';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.model';
-import { validationResult } from 'express-validator';
 
 interface RefreshRequest {
   refreshToken: string;
