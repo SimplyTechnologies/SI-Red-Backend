@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { User } from '../models/User.model';
 import { sequelize } from '../config/db';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 dotenv.config();
 
