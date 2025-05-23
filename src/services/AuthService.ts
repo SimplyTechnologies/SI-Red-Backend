@@ -5,6 +5,7 @@ import { config } from 'dotenv';
 import { JWT_TOKEN_EXPIRATION } from '../constants/constants';
 import createHttpError from 'http-errors';
 config();
+import fs from 'fs';
 
 export class AuthService {
   async signIn(
