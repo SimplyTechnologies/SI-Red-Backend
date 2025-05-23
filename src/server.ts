@@ -10,6 +10,9 @@ import { config } from 'dotenv';
 import passport from './config/passport';
 import cookieParser from 'cookie-parser';
 import { errorHandler } from './middlewares/errorHandler';
+import { vehicleValidationRules } from './validations/vehicle.validation';
+import authMiddleware from './middlewares/authMiddleware';
+
 config();
 
 const app = express();
@@ -41,6 +44,17 @@ app.post(
     next();
   }
 );
+
+app.get(
+  '/vin',
+  vehicleValidationRules,
+  validateRequest,
+  (req: Request, res: Response, next: NextFunction) => {
+    next();
+  }
+);
+
+app.use(authMiddleware);
 
 RegisterRoutes(app);
 
