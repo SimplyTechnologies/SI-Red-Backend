@@ -1,13 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from 'express';
+import { HttpError } from 'http-errors';
 
-export function errorHandler(
-  err: any,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Something went wrong";
+export function errorHandler(err: unknown, req: Request, res: Response) {
+  const error = err as Partial<HttpError>;
+
+  const status = error.status ?? 500;
+  const message = error.message ?? 'Something went wrong';
 
   res.status(status).json({
     error: {
