@@ -29,11 +29,11 @@ class VehicleService {
     return await Vehicle.findAll();
   }
 
-  async getVehicleById(id: number) {
+  async getVehicleById(id: string) {
     return await Vehicle.findByPk(id);
   }
 
-  async deleteVehicle(id: number) {
+  async deleteVehicle(id: string) {
     const vehicle = await Vehicle.findByPk(id);
     if (!vehicle) {
       throw new Error("Vehicle not found");
@@ -42,7 +42,7 @@ class VehicleService {
     return { message: "Vehicle deleted successfully" };
   }
 
-  async updateVehicle(id: number, updateData: Partial<VehicleInput>) {
+  async updateVehicle(id: string, updateData: Partial<VehicleInput>) {
     const vehicle = await Vehicle.findByPk(id);
     if (!vehicle) {
       throw new Error("Vehicle not found");

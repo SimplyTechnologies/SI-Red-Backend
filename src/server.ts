@@ -1,15 +1,17 @@
-import express, { NextFunction, Request, Response } from 'express';
-import { RegisterRoutes } from './routes/routes'; // that is tsoa generated file
-import { signInValidationRules } from './validations/auth.validation';
-import { validateRequest } from './middlewares/validateRequest';
-import swaggerUi from 'swagger-ui-express';
-import * as swaggerDocument from '../dist/swagger.json'; // that is tsoa generated file
-import cors from 'cors';
-import { testDbConnection } from './config/db';
-import { config } from 'dotenv';
-import passport from './config/passport';
-import cookieParser from 'cookie-parser';
-import { errorHandler } from './middlewares/errorHandler';
+import express, { NextFunction, Request, Response } from "express";
+import { RegisterRoutes } from "./routes/routes"; // that is tsoa generated file
+import { signInValidationRules } from "./validations/auth.validation";
+import { validateRequest } from "./middlewares/validateRequest";
+import swaggerUi from "swagger-ui-express";
+import * as swaggerDocument from "../dist/swagger.json"; // that is tsoa generated file
+import cors from "cors";
+import { testDbConnection } from "./config/db";
+import { config } from "dotenv";
+import passport from "./config/passport";
+import cookieParser from "cookie-parser";
+import { errorHandler } from "./middlewares/errorHandler";
+import { vehicleValidationRules } from "./validations/vehicle.validation";
+import authMiddleware from "./middlewares/authMiddleware";
 
 config();
 
@@ -23,42 +25,53 @@ app.use(passport.initialize());
 
 // DB connectoin
 (async () => {
-    await testDbConnection();
+  await testDbConnection();
 })();
 
 app.post(
-    '/auth/signin',
-    signInValidationRules,
-    validateRequest,
-    (req: Request, res: Response, next:NextFunction) => {
-        next(); 
-    }
+  "/auth/signin",
+  signInValidationRules,
+  validateRequest,
+  (req: Request, res: Response, next: NextFunction) => {
+    next();
+  }
 );
+
+app.get(
+  "/vin",
+  vehicleValidationRules,
+  validateRequest,
+  (req: Request, res: Response, next: NextFunction) => {
+    next();
+  }
+);
+
+app.use(authMiddleware);
 
 RegisterRoutes(app);
 
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.get('/swagger.json', (_req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerDocument);
+app.get("/swagger.json", (_req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerDocument);
 });
 
-app.get('/', (req: Request, res: Response) => {
-    res.send('Hello TypeScript with Express!');
+app.get("/", (req: Request, res: Response) => {
+  res.send("Hello TypeScript with Express!");
 });
 
 app.get(
-    '/protected',
-    passport.authenticate('jwt', { session: false }),
-    (req, res) => {
-        res.json({ message: 'You are authenticated', user: req.user });
-    }
+  "/protected",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    res.json({ message: "You are authenticated", user: req.user });
+  }
 );
 
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`);
-    console.log(`Swagger docs at http://localhost:${PORT}/docs`);
+  console.log(`Server is running at http://localhost:${PORT}`);
+  console.log(`Swagger docs at http://localhost:${PORT}/docs`);
 });

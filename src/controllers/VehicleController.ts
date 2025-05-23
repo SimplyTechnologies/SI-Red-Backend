@@ -61,7 +61,7 @@ export class VehicleController extends Controller {
   }
 
   @Get("/{id}")
-  public async getVehicle(@Path() id: number): Promise<VehicleResponse> {
+  public async getVehicle(@Path() id: string): Promise<VehicleResponse> {
     const vehicle = await VehicleService.getVehicleById(id);
     if (!vehicle) {
       this.setStatus(404);
@@ -72,7 +72,7 @@ export class VehicleController extends Controller {
 
   @Put("/{id}")
   public async updateVehicle(
-    @Path() id: number,
+    @Path() id: string,
     @Body() updateData: Partial<VehicleInput>
   ): Promise<VehicleResponse> {
     const updated = await VehicleService.updateVehicle(id, updateData);
@@ -80,7 +80,7 @@ export class VehicleController extends Controller {
   }
 
   @Delete("/{id}")
-  public async deleteVehicle(@Path() id: number): Promise<{ message: string }> {
+  public async deleteVehicle(@Path() id: string): Promise<{ message: string }> {
     return await VehicleService.deleteVehicle(id);
   }
 }
