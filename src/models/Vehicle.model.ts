@@ -20,6 +20,8 @@ interface VehicleAttributes {
   state: string;
   country: string;
   zipcode: string;
+  status: string;
+  location: string;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;
@@ -39,6 +41,8 @@ export class Vehicle
   public state!: string;
   public country!: string;
   public zipcode!: string;
+  public status!: string;
+  public location!: string;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -96,6 +100,16 @@ Vehicle.init(
     zipcode: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    status: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "in stock",
+    },
+    location: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "",
     },
   },
   {

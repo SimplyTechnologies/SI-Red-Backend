@@ -10,11 +10,19 @@ export interface VehicleInput {
   country: string;
   zipcode: string;
   user_id: string;
+  status?: string;
+  location?: string;
 }
 
 class VehicleService {
   async createVehicle(data: VehicleInput) {
-    return await Vehicle.create(data);
+    const vehicleData = {
+      ...data,
+      status: data.status ?? "in stock",
+      location: data.location ?? "",
+    };
+
+    return await Vehicle.create(vehicleData);
   }
 
   async getAllVehicles() {

@@ -64,6 +64,16 @@ export async function up(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    status: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "in stock",
+    },
+    location: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "",
+    },
     createdAt: {
       allowNull: false,
       type: DataTypes.DATE,

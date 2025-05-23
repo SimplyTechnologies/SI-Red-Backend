@@ -22,6 +22,8 @@ interface VehicleInput {
   country: string;
   zipcode: string;
   user_id: string;
+  status?: string;
+  location?: string;
 }
 
 interface VehicleResponse {
@@ -35,6 +37,8 @@ interface VehicleResponse {
   country: string;
   zipcode: string;
   user_id: string;
+  status: string;
+  location: string;
 }
 
 @Route("vehicles")
@@ -47,7 +51,7 @@ export class VehicleController extends Controller {
   ): Promise<VehicleResponse> {
     const newVehicle = await VehicleService.createVehicle(requestBody);
     this.setStatus(201);
-    return newVehicle;
+    return newVehicle.get({ plain: true });
   }
 
   @Get("/")
