@@ -1,17 +1,12 @@
-import { Strategy as JwtStrategy } from 'passport-jwt';
+import { ExtractJwt, Strategy as JwtStrategy } from 'passport-jwt';
 import passport from 'passport';
 import dotenv from 'dotenv';
 import { User } from '../models/User.model';
-import { Request } from 'express';
 
 dotenv.config();
 
-const cookieExtractor = (req: Request): string | null => {
-  return req?.cookies?.accessToken || null;
-};
-
 const options = {
-  jwtFromRequest: cookieExtractor,
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: process.env.JWT_SECRET!,
 };
 
