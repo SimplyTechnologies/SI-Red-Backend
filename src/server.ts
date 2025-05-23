@@ -17,6 +17,14 @@ config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(cors());
@@ -29,7 +37,7 @@ app.use(passport.initialize());
 })();
 
 app.post(
-  "/auth/signin",
+  '/auth/signin',
   signInValidationRules,
   validateRequest,
   (req: Request, res: Response, next: NextFunction) => {
@@ -52,22 +60,18 @@ RegisterRoutes(app);
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.get("/swagger.json", (_req, res) => {
-  res.setHeader("Content-Type", "application/json");
+app.get('/swagger.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   res.send(swaggerDocument);
 });
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello TypeScript with Express!");
+app.get('/', (req: Request, res: Response) => {
+  res.send('Hello TypeScript with Express!');
 });
 
-app.get(
-  "/protected",
-  passport.authenticate("jwt", { session: false }),
-  (req, res) => {
-    res.json({ message: "You are authenticated", user: req.user });
-  }
-);
+app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
+  res.json({ message: 'You are authenticated', user: req.user });
+});
 
 app.use(errorHandler);
 
