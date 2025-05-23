@@ -1,4 +1,5 @@
 import { body } from 'express-validator';
+import fs from 'fs';
 
 export const signInValidationRules = [
   body('email').isEmail().withMessage('Email must be valid'),
