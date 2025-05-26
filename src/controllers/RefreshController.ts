@@ -1,15 +1,7 @@
 import { Controller, Post, Route, Tags, Body } from 'tsoa';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.model';
-
-interface RefreshRequest {
-  refreshToken: string;
-}
-
-interface RefreshResponse {
-  newAccessToken?: string;
-  message?: string;
-}
+import { RefreshRequest, RefreshResponse } from '../types/user';
 
 @Route('auth')
 @Tags('Authentication')
