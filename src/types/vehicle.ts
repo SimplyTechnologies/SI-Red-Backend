@@ -1,4 +1,15 @@
-import { Optional } from "sequelize";
+import { Optional } from 'sequelize';
+
+export interface MakeInfo {
+  id: number;
+  name: string;
+}
+
+export interface ModelInfo {
+  id: number;
+  name: string;
+  make: MakeInfo;
+}
 
 export interface VehicleInput {
   model_id: number;
@@ -18,8 +29,7 @@ export interface VehicleResponse extends VehicleInput {
   id: string;
   status: string;
   location: string;
-  model?: string;
-  make?: string;
+  model?: ModelInfo;
 }
 
 export interface VehicleAttributes {
@@ -40,4 +50,7 @@ export interface VehicleAttributes {
   deletedAt?: Date;
 }
 
-export type VehicleCreationAttributes = Optional<VehicleAttributes, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
+export type VehicleCreationAttributes = Optional<
+  VehicleAttributes,
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
+>;
