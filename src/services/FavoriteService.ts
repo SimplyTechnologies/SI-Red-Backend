@@ -1,4 +1,5 @@
 import { sequelize } from '../config/db';
+import createError from 'http-errors';
 import { User, Vehicle } from '../models';
 
 interface UserWithFavorites extends User {
@@ -13,7 +14,7 @@ export default class FavoriteService {
     const vehicle = await Vehicle.findByPk(vehicleId);
 
     if (!user || !vehicle) {
-      throw new Error('User or Vehicle not found');
+      throw createError(404, 'User or Vehicle not found');
     }
 
     const exists = await sequelize.models.favorites.findOne({
@@ -21,13 +22,14 @@ export default class FavoriteService {
     });
 
     if (exists) {
-      throw new Error('Already in favorites');
+      throw createError(409, 'Vehicle is already in favorites');
     }
 
     try {
       await user.addFavoriteVehicle(vehicle);
     } catch (err) {
       console.error(err);
+      throw createError(500, 'Failed to add vehicle to favorites');
     }
   }
 
@@ -36,10 +38,15 @@ export default class FavoriteService {
     const vehicle = await Vehicle.findByPk(vehicleId);
 
     if (!user || !vehicle) {
-      throw new Error('User or Vehicle not found');
+      throw createError(404, 'User or Vehicle not found');
     }
 
-    await user.removeFavoriteVehicle(vehicle);
+    try {
+      await user.removeFavoriteVehicle(vehicle);
+    } catch (err) {
+      console.error(err);
+      throw createError(500, 'Failed to remove vehicle from favorites');
+    }
   }
 
   static async getFavoriteVehicles(userId: string): Promise<Vehicle[]> {
@@ -54,7 +61,7 @@ export default class FavoriteService {
     })) as UserWithFavorites;
 
     if (!user) {
-      throw new Error('User not found');
+      throw createError(404, 'User not found');
     }
 
     return user.favoriteVehicles;

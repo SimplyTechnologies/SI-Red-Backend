@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Get, Path, Put, Delete, Route, Tags, SuccessResponse } from 'tsoa';
 import VehicleService from '../services/VehicleService';
-import { Vehicle } from '../models/Vehicle.model';
+import { Vehicle } from '../models';
 
 interface VehicleInput {
   model_id: number;
@@ -17,9 +17,9 @@ interface VehicleInput {
 }
 
 interface VehicleResponse extends VehicleInput {
-id: string;
-status: string;
-location: string;
+  id: string;
+  status: string;
+  location: string;
 }
 
 @Route('vehicles')

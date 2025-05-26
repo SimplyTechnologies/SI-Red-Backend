@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Delete, Route, Tags, Query } from 'tsoa';
 import { VehicleAttributes } from '../models/Vehicle.model';
 import FavoriteService from '../services/FavoriteService';
+import { HttpError } from 'http-errors';
 
 interface FavoriteRequestBody {
   user_id: string;
@@ -12,20 +13,35 @@ interface FavoriteRequestBody {
 export class FavoriteController extends Controller {
   @Post('/')
   public async addToFavorites(@Body() body: FavoriteRequestBody): Promise<{ message: string }> {
-    await FavoriteService.addToFavorites(body.user_id, body.vehicle_id);
-    return { message: 'Vehicle added to favorites' };
+    try {
+      await FavoriteService.addToFavorites(body.user_id, body.vehicle_id);
+      return { message: 'Vehicle added to favorites' };
+    } catch (error) {
+      if (error instanceof HttpError) this.setStatus(error.statusCode);
+      throw error;
+    }
   }
 
   @Delete('/')
   public async removeFromFavorites(
     @Body() body: FavoriteRequestBody
   ): Promise<{ message: string }> {
-    await FavoriteService.removeFromFavorites(body.user_id, body.vehicle_id);
-    return { message: 'Vehicle removed from favorites' };
+    try {
+      await FavoriteService.removeFromFavorites(body.user_id, body.vehicle_id);
+      return { message: 'Vehicle removed from favorites' };
+    } catch (error) {
+      if (error instanceof HttpError) this.setStatus(error.statusCode);
+      throw error;
+    }
   }
 
   @Get('/')
   public async getFavorites(@Query() user_id: string): Promise<VehicleAttributes[]> {
-    return await FavoriteService.getFavoriteVehicles(user_id);
+    try {
+      return await FavoriteService.getFavoriteVehicles(user_id);
+    } catch (error) {
+      if (error instanceof HttpError) this.setStatus(error.statusCode);
+      throw error;
+    }
   }
 }

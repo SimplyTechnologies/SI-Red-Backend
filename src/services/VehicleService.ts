@@ -1,4 +1,4 @@
-import { Vehicle } from '../models/Vehicle.model';
+import { Vehicle } from '../models';
 
 export interface VehicleInput {
   model_id: number;
