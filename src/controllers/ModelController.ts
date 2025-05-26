@@ -1,11 +1,6 @@
 import { Controller, Get, Query, Route, Tags, Path } from 'tsoa';
 import ModelService from '../services/ModelService';
-
-interface ModelResponse {
-  id: number;
-  name: string;
-  make_id: number;
-}
+import { ModelResponse } from '../types/model';
 
 @Route('models')
 @Tags('Model')

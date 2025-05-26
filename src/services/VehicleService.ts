@@ -1,20 +1,7 @@
 import { Model } from '../models/Model.model';
 import { Vehicle } from '../models/Vehicle.model';
 import { Make } from '../models/Make.model';
-
-export interface VehicleInput {
-  model_id: number;
-  year: string;
-  vin: string;
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  zipcode: string;
-  user_id: string;
-  status?: string;
-  location?: string;
-}
+import { VehicleInput } from '../types/vehicle';
 
 class VehicleService {
   async createVehicle(data: VehicleInput) {
@@ -51,7 +38,7 @@ class VehicleService {
       include: [
         {
           model: Model,
-          as: 'model', 
+          as: 'model',
           attributes: ['name'],
           include: [
             {

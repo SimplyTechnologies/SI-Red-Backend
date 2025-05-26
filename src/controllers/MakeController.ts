@@ -1,11 +1,7 @@
 import { Controller, Get, Route, Tags, Path, Query } from 'tsoa';
 import MakeService from '../services/MakeService';
 import { Make } from '../models/Make.model';
-
-interface MakeResponse {
-  id: number;
-  name: string;
-}
+import { MakeResponse } from '../types/make';
 
 @Route('makes')
 @Tags('Make')
