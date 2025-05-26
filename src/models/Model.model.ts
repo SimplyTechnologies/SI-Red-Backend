@@ -1,6 +1,5 @@
 import { DataTypes, Model as SequelizeModel, Optional } from 'sequelize';
 import { sequelize } from '../config/db';
-import { Make } from './Make.model';
 
 interface ModelAttributes {
   id: number;
@@ -8,7 +7,7 @@ interface ModelAttributes {
   make_id: number;
 }
 
-type ModelCreationAttributes = Optional<ModelAttributes, 'id'>
+type ModelCreationAttributes = Optional<ModelAttributes, 'id'>;
 
 export class Model
   extends SequelizeModel<ModelAttributes, ModelCreationAttributes>
@@ -46,9 +45,3 @@ Model.init(
     timestamps: false,
   }
 );
-
-// ✅ One Model belongs to one Make
-Model.belongsTo(Make, { foreignKey: 'make_id', as: 'make' });
-
-// ✅ One Model has many Vehicles
-// Model.hasMany(Vehicle, { foreignKey: "model_id", as: "vehicles" });
