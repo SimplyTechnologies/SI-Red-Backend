@@ -1,17 +1,6 @@
 import { Body, Controller, Post, Route, Tags, SuccessResponse } from 'tsoa';
 import { AuthService } from '../services/AuthService';
-
-export interface SignInRequest {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-export interface SignInResponse {
-  message: string;
-  accessToken: string;
-  refreshToken: string;
-}
+import { SignInRequest, SignInResponse } from '../types/user';
 
 @Route('auth')
 @Tags('Authentication')

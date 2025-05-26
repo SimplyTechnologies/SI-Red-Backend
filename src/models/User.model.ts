@@ -1,17 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db';
-
-export type UserRole = 'SUPER_ADMIN' | 'USER';
-
-export interface UserAttributes {
-  id: string;
-  email: string;
-  passwordHash: string;
-  role: UserRole;
-  isVerified: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+import { UserAttributes, UserRole } from '../types/user';
 
 export type UserCreationAttributes = Optional<UserAttributes, 'id' | 'isVerified'>;
 

@@ -1,13 +1,6 @@
-import { DataTypes, Model as SequelizeModel, Optional } from 'sequelize';
+import { DataTypes, Model as SequelizeModel } from 'sequelize';
 import { sequelize } from '../config/db';
-
-interface ModelAttributes {
-  id: number;
-  name: string;
-  make_id: number;
-}
-
-type ModelCreationAttributes = Optional<ModelAttributes, 'id'>;
+import { ModelAttributes, ModelCreationAttributes } from '../types/model';
 
 export class Model
   extends SequelizeModel<ModelAttributes, ModelCreationAttributes>

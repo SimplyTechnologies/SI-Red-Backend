@@ -1,18 +1,5 @@
-import { Vehicle } from '../models';
-
-export interface VehicleInput {
-  model_id: number;
-  year: string;
-  vin: string;
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  zipcode: string;
-  user_id: string;
-  status?: string;
-  location?: string;
-}
+import { Vehicle, Model, Make } from '../models';
+import { VehicleInput } from '../types/vehicle';
 
 class VehicleService {
   async createVehicle(data: VehicleInput) {
@@ -26,11 +13,41 @@ class VehicleService {
   }
 
   async getAllVehicles() {
-    return await Vehicle.findAll();
+    return await Vehicle.findAll({
+      include: [
+        {
+          model: Model as typeof Model & { new (): Model }, // Type assertion
+          as: 'model',
+          attributes: ['name'],
+          include: [
+            {
+              model: Make as typeof Make & { new (): Make }, // Type assertion
+              as: 'make',
+              attributes: ['name'],
+            },
+          ],
+        },
+      ],
+    });
   }
 
   async getVehicleById(id: string) {
-    return await Vehicle.findByPk(id);
+    return await Vehicle.findByPk(id, {
+      include: [
+        {
+          model: Model,
+          as: 'model',
+          attributes: ['name'],
+          include: [
+            {
+              model: Make,
+              as: 'make',
+              attributes: ['name'],
+            },
+          ],
+        },
+      ],
+    });
   }
 
   async deleteVehicle(id: string) {

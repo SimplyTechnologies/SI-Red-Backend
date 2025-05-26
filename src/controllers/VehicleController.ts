@@ -1,26 +1,6 @@
 import { Body, Controller, Post, Get, Path, Put, Delete, Route, Tags, SuccessResponse } from 'tsoa';
 import VehicleService from '../services/VehicleService';
-import { Vehicle } from '../models';
-
-interface VehicleInput {
-  model_id: number;
-  year: string;
-  vin: string;
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  zipcode: string;
-  user_id: string;
-  status?: string;
-  location?: string;
-}
-
-interface VehicleResponse extends VehicleInput {
-  id: string;
-  status: string;
-  location: string;
-}
+import { VehicleInput, VehicleResponse } from '../types/vehicle';
 
 @Route('vehicles')
 @Tags('Vehicle')
@@ -35,8 +15,7 @@ export class VehicleController extends Controller {
 
   @Get('/')
   public async getVehicles(): Promise<VehicleResponse[]> {
-    const vehicles = await VehicleService.getAllVehicles();
-    return vehicles.map((v: Vehicle) => v.get({ plain: true }));
+    return await VehicleService.getAllVehicles();
   }
 
   @Get('/{id}')

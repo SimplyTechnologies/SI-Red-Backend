@@ -1,12 +1,6 @@
 import { Controller, Get, Route, Tags, Query } from 'tsoa';
 import VinService from '../services/VinService';
-
-interface VinResponse {
-  vin: string;
-  make: string;
-  model: string;
-  year: string;
-}
+import { VinResponse } from '../types/vin';
 
 @Route('vin')
 @Tags('VIN')

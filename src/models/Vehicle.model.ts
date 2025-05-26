@@ -1,28 +1,6 @@
-import { DataTypes, Model as SequelizeModel, Optional } from 'sequelize';
+import { DataTypes, Model as SequelizeModel } from 'sequelize';
 import { sequelize } from '../config/db';
-
-export type VehicleCreationAttributes = Optional<
-  VehicleAttributes,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
->;
-
-export interface VehicleAttributes {
-  id: string;
-  model_id: number;
-  user_id: string;
-  year: string;
-  vin: string;
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  zipcode: string;
-  status: string;
-  location: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  deletedAt?: Date;
-}
+import { VehicleAttributes, VehicleCreationAttributes } from '../types/vehicle';
 
 export class Vehicle
   extends SequelizeModel<VehicleAttributes, VehicleCreationAttributes>

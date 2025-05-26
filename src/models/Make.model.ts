@@ -1,12 +1,6 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../config/db';
-
-interface MakeAttributes {
-  id: number;
-  name: string;
-}
-
-type MakeCreationAttributes = Optional<MakeAttributes, 'id'>;
+import { MakeAttributes, MakeCreationAttributes } from '../types/make';
 
 export class Make extends Model<MakeAttributes, MakeCreationAttributes> implements MakeAttributes {
   public id!: number;
