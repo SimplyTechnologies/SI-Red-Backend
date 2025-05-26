@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Delete, Route, Tags, Query } from 'tsoa';
-import { VehicleAttributes } from '../models/Vehicle.model';
+import { VehicleAttributes } from '../types/vehicle';
 import FavoriteService from '../services/FavoriteService';
 import { HttpError } from 'http-errors';
 
