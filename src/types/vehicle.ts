@@ -23,7 +23,6 @@ export interface VehicleInput {
   user_id: string;
   status?: string;
   location?: string;
-  isFavorite?: boolean;
 }
 
 export interface VehicleResponse extends VehicleInput {
@@ -31,6 +30,7 @@ export interface VehicleResponse extends VehicleInput {
   status: string;
   location: string;
   model?: ModelInfo;
+  isFavorite?: boolean;
 }
 
 export interface VehicleAttributes {

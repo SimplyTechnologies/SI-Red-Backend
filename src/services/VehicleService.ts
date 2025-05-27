@@ -1,5 +1,5 @@
 import { Vehicle, Model, Make } from '../models';
-import { VehicleInput } from '../types/vehicle';
+import { VehicleInput, VehicleResponse } from '../types/vehicle';
 import FavoriteService from './FavoriteService';
 
 class VehicleService {
@@ -33,10 +33,12 @@ class VehicleService {
       ],
     });
 
-    return vehicles.map((vehicle) => {
-      const plain = vehicle.get({ plain: true }) as VehicleInput;
-      plain.isFavorite = favoriteIds.has(vehicle.id);
-      return plain;
+    return vehicles.map((vehicle): VehicleResponse => {
+      const plain = vehicle.get({ plain: true }) as Omit<VehicleResponse, 'isFavorite'>;
+      return {
+        ...plain,
+        isFavorite: favoriteIds.has(vehicle.id),
+      };
     });
   }
 
