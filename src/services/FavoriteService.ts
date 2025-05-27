@@ -1,12 +1,7 @@
 import { sequelize } from '../config/db';
 import createError from 'http-errors';
 import { User, Vehicle } from '../models';
-
-interface UserWithFavorites extends User {
-  addFavoriteVehicle: (vehicle: Vehicle | string) => Promise<void>;
-  removeFavoriteVehicle: (vehicle: Vehicle | string) => Promise<void>;
-  favoriteVehicles: Vehicle[];
-}
+import { UserWithFavorites } from '../types/favorite';
 
 export default class FavoriteService {
   static async addToFavorites(userId: string, vehicleId: string): Promise<void> {

@@ -1,12 +1,8 @@
 import { Body, Controller, Get, Post, Delete, Route, Tags, Query } from 'tsoa';
 import { VehicleAttributes } from '../types/vehicle';
+import { FavoriteRequestBody } from '../types/favorite';
 import FavoriteService from '../services/FavoriteService';
 import { HttpError } from 'http-errors';
-
-interface FavoriteRequestBody {
-  user_id: string;
-  vehicle_id: string;
-}
 
 @Route('favorites')
 @Tags('Favorite')
