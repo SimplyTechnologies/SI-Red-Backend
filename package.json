@@ -6,7 +6,7 @@
     "dev": "ts-node-dev --respawn src/server.ts",
     "tsoa": "tsoa spec && tsoa routes",
     "start": "npm run tsoa && npm run dev",
-    "seed:superuser": "ts-node src/seed/superuser.ts",
+    "seed:superuser": "ts-node-dev src/seed/superuser.ts",
     "migrate": "cross-env NODE_OPTIONS=\"-r ts-node/register -r dotenv/config\" sequelize-cli db:migrate",
     "migrate:undo": "cross-env NODE_OPTIONS=\"-r ts-node/register -r dotenv/config\" db:migrate:undo",
     "seed": "cross-env NODE_OPTIONS=\"-r ts-node/register -r dotenv/config\" db:seed:all",

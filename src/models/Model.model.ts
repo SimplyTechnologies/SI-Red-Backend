@@ -1,6 +1,5 @@
 import { DataTypes, Model as SequelizeModel } from 'sequelize';
 import { sequelize } from '../config/db';
-import { Make } from './Make.model';
 import { ModelAttributes, ModelCreationAttributes } from '../types/model';
 
 export class Model
@@ -39,9 +38,3 @@ Model.init(
     timestamps: false,
   }
 );
-
-// ✅ One Model belongs to one Make
-Model.belongsTo(Make, { foreignKey: 'make_id', as: 'make' });
-
-// ✅ One Model has many Vehicles
-// Model.hasMany(Vehicle, { foreignKey: "model_id", as: "vehicles" });

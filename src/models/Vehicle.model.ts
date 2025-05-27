@@ -1,7 +1,5 @@
 import { DataTypes, Model as SequelizeModel } from 'sequelize';
 import { sequelize } from '../config/db';
-import { Model as CarModel } from './Model.model';
-import { User } from './User.model';
 import { VehicleAttributes, VehicleCreationAttributes } from '../types/vehicle';
 
 export class Vehicle
@@ -97,15 +95,3 @@ Vehicle.init(
     timestamps: true,
   }
 );
-
-// ✅ One Vehicle belongs to one Model
-Vehicle.belongsTo(CarModel, {
-  foreignKey: 'model_id',
-  as: 'model',
-});
-
-// ✅ One Vehicle belongs to one User
-Vehicle.belongsTo(User, {
-  foreignKey: 'user_id',
-  as: 'user',
-});

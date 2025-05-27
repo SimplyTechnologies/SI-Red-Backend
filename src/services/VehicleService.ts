@@ -1,7 +1,6 @@
-import { Model } from '../models/Model.model';
-import { Vehicle } from '../models/Vehicle.model';
-import { Make } from '../models/Make.model';
-import { VehicleInput } from '../types/vehicle';
+import { Vehicle, Model, Make } from '../models';
+import { VehicleInput, VehicleResponse } from '../types/vehicle';
+import FavoriteService from './FavoriteService';
 
 class VehicleService {
   async createVehicle(data: VehicleInput) {
@@ -14,22 +13,32 @@ class VehicleService {
     return await Vehicle.create(vehicleData);
   }
 
-  async getAllVehicles() {
-    return await Vehicle.findAll({
+  async getAllVehicles(userId?: string) {
+    const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
+
+    const vehicles = await Vehicle.findAll({
       include: [
         {
-          model: Model as typeof Model & { new (): Model }, // Type assertion
+          model: Model as typeof Model & { new (): Model },
           as: 'model',
           attributes: ['name'],
           include: [
             {
-              model: Make as typeof Make & { new (): Make }, // Type assertion
+              model: Make as typeof Make & { new (): Make },
               as: 'make',
               attributes: ['name'],
             },
           ],
         },
       ],
+    });
+
+    return vehicles.map((vehicle): VehicleResponse => {
+      const plain = vehicle.get({ plain: true }) as Omit<VehicleResponse, 'isFavorite'>;
+      return {
+        ...plain,
+        isFavorite: favoriteIds.has(vehicle.id),
+      };
     });
   }
 

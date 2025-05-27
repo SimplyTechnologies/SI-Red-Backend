@@ -30,6 +30,7 @@ export interface VehicleResponse extends VehicleInput {
   status: string;
   location: string;
   model?: ModelInfo;
+  isFavorite?: boolean;
 }
 
 export interface VehicleAttributes {

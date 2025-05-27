@@ -1,4 +1,4 @@
-import { Model } from '../models/Model.model';
+import { Model } from '../models';
 
 class ModelService {
   async getAllModelsByMakeId(id: number) {

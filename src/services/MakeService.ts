@@ -1,4 +1,4 @@
-import { Make } from '../models/Make.model';
+import { Make } from '../models';
 
 class MakeService {
   async getAllMakes() {

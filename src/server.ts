@@ -1,4 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
+import './models';
 import { RegisterRoutes } from './routes/routes'; // that is tsoa generated file
 import { signInValidationRules } from './validations/auth.validation';
 import { validateRequest } from './middlewares/validateRequest';

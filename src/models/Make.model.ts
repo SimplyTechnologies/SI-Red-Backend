@@ -26,6 +26,3 @@ Make.init(
     timestamps: false,
   }
 );
-
-// ✅ One Make has many Models
-// Make.hasMany(CarModel, { foreignKey: "make_id", as: "models" });

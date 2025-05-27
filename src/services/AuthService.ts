@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User.model';
+import { User } from '../models';
 import { config } from 'dotenv';
 import { JWT_TOKEN_EXPIRATION } from '../constants/constants';
 import createHttpError from 'http-errors';

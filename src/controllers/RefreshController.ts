@@ -1,6 +1,6 @@
 import { Controller, Post, Route, Tags, Body } from 'tsoa';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User.model';
+import { User } from '../models';
 import { RefreshRequest, RefreshResponse } from '../types/user';
 
 @Route('auth')
