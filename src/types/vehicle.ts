@@ -23,6 +23,7 @@ export interface VehicleInput {
   user_id: string;
   status?: string;
   location?: string;
+  isFavorite?: boolean;
 }
 
 export interface VehicleResponse extends VehicleInput {

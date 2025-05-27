@@ -61,4 +61,9 @@ export default class FavoriteService {
 
     return user.favoriteVehicles;
   }
+
+  static async getFavoriteVehicleIds(userId: string): Promise<Set<string>> {
+    const vehicles = await this.getFavoriteVehicles(userId);
+    return new Set(vehicles.map((v) => v.id));
+  }
 }

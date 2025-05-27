@@ -1,4 +1,16 @@
-import { Body, Controller, Post, Get, Path, Put, Delete, Route, Tags, SuccessResponse } from 'tsoa';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Path,
+  Put,
+  Delete,
+  Route,
+  Tags,
+  SuccessResponse,
+  Query,
+} from 'tsoa';
 import VehicleService from '../services/VehicleService';
 import { VehicleInput, VehicleResponse } from '../types/vehicle';
 
@@ -14,8 +26,8 @@ export class VehicleController extends Controller {
   }
 
   @Get('/')
-  public async getVehicles(): Promise<VehicleResponse[]> {
-    return await VehicleService.getAllVehicles();
+  public async getVehicles(@Query() userId?: string): Promise<VehicleResponse[]> {
+    return await VehicleService.getAllVehicles(userId);
   }
 
   @Get('/{id}')
