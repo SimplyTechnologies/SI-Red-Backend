@@ -20,10 +20,11 @@ export class FavoriteController extends Controller {
 
   @Delete('/')
   public async removeFromFavorites(
-    @Body() body: FavoriteRequestBody
+    @Query() user_id: string,
+    @Query() vehicle_id: string
   ): Promise<{ message: string }> {
     try {
-      await FavoriteService.removeFromFavorites(body.user_id, body.vehicle_id);
+      await FavoriteService.removeFromFavorites(user_id, vehicle_id);
       return { message: 'Vehicle removed from favorites' };
     } catch (error) {
       if (error instanceof HttpError) this.setStatus(error.statusCode);
