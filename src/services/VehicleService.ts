@@ -1,6 +1,7 @@
 import { Vehicle, Model, Make } from '../models';
-import { VehicleInput, VehicleResponse } from '../types/vehicle';
+import { GetVehiclesOptions, VehicleInput, VehicleResponse } from '../types/vehicle';
 import FavoriteService from './FavoriteService';
+import { Op, Sequelize } from 'sequelize';
 
 class VehicleService {
   async createVehicle(data: VehicleInput) {
@@ -13,24 +14,50 @@ class VehicleService {
     return await Vehicle.create(vehicleData);
   }
 
-  async getAllVehicles(userId?: string) {
-    const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
+  async getAllVehicles({ userId, page, limit, search }: GetVehiclesOptions) {
+    const offset = (page - 1) * limit;
+
+    const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();    
+
+    const whereClause = search
+      ? {
+          [Op.or]: [
+            Sequelize.where(Sequelize.col('model.name'), {
+              [Op.iLike]: `%${search}%`,
+            }),
+            Sequelize.where(Sequelize.col('model.make.name'), {
+              [Op.iLike]: `%${search}%`,
+            }),
+            Sequelize.where(Sequelize.col('year'), {
+              [Op.iLike]: `%${search}%`,
+            }),
+            Sequelize.where(Sequelize.col('vin'), {
+              [Op.iLike]: `%${search}%`,
+            }),
+          ],
+        }
+      : {};
 
     const vehicles = await Vehicle.findAll({
+      where: whereClause,
       include: [
         {
-          model: Model as typeof Model & { new (): Model },
+          model: Model,
           as: 'model',
+          required: !!search, 
           attributes: ['name'],
           include: [
             {
-              model: Make as typeof Make & { new (): Make },
+              model: Make,
               as: 'make',
+              required: false,
               attributes: ['name'],
             },
           ],
         },
       ],
+      limit,
+      offset,
     });
 
     return vehicles.map((vehicle): VehicleResponse => {

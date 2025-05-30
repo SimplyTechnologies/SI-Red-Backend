@@ -26,8 +26,13 @@ export class VehicleController extends Controller {
   }
 
   @Get('/')
-  public async getVehicles(@Query() userId?: string): Promise<VehicleResponse[]> {
-    return await VehicleService.getAllVehicles(userId);
+  public async getVehicles(
+    @Query() userId?: string,
+    @Query() page: number = 1,
+    @Query() limit: number = 10,
+    @Query() search?: string
+  ): Promise<VehicleResponse[]> {
+    return await VehicleService.getAllVehicles({ userId, page, limit, search });
   }
 
   @Get('/{id}')

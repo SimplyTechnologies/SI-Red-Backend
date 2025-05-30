@@ -1,6 +1,6 @@
 import { sequelize } from '../config/db';
 import createError from 'http-errors';
-import { User, Vehicle } from '../models';
+import { Make, Model, User, Vehicle } from '../models';
 import { UserWithFavorites } from '../types/favorite';
 
 export default class FavoriteService {
@@ -51,6 +51,21 @@ export default class FavoriteService {
           model: Vehicle,
           as: 'favoriteVehicles',
           through: { attributes: [] },
+          include: [
+            {
+              model: Model,
+              as: 'model',
+              attributes: ['name'],
+              include: [
+                {
+                  model: Make,
+                  as: 'make',
+                  required: false,
+                  attributes: ['name'],
+                },
+              ],
+            },
+          ],
         },
       ],
     })) as UserWithFavorites;

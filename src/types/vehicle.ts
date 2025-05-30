@@ -11,6 +11,13 @@ export interface ModelInfo {
   make: MakeInfo;
 }
 
+export interface GetVehiclesOptions {
+  userId?: string;
+  page: number;
+  limit: number;
+  search?: string;
+}
+
 export interface VehicleInput {
   model_id: number;
   year: string;
