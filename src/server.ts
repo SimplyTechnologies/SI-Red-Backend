@@ -63,7 +63,7 @@ app.get(
   (req: Request, res: Response, next: NextFunction) => {
     next();
   }
-)
+);
 
 app.use(authMiddleware);
 
