@@ -22,7 +22,7 @@ export interface VehicleInput {
   zipcode: string;
   user_id: string;
   status?: string;
-  location?: string;
+  location: string;
 }
 
 export interface VehicleResponse extends VehicleInput {
