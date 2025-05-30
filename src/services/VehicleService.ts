@@ -7,7 +7,6 @@ class VehicleService {
     const vehicleData = {
       ...data,
       status: data.status ?? 'in stock',
-      location: data.location ?? '',
     };
 
     return await Vehicle.create(vehicleData);
