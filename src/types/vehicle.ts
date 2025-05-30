@@ -38,6 +38,7 @@ export interface VehicleResponse extends VehicleInput {
   location: string;
   model?: ModelInfo;
   isFavorite?: boolean;
+  createdAt?: Date; 
 }
 
 export interface VehicleAttributes {
