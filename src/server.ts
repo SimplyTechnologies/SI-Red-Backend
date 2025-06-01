@@ -1,10 +1,10 @@
 import express, { NextFunction, Request, Response } from 'express';
 import './models';
-import { RegisterRoutes } from './routes/routes'; // that is tsoa generated file
+import { RegisterRoutes } from './routes/routes'; 
 import { signInValidationRules } from './validations/auth.validation';
 import { validateRequest } from './middlewares/validateRequest';
 import swaggerUi from 'swagger-ui-express';
-import swaggerDocument from '../dist/swagger.json'; // that is tsoa generated file
+import swaggerDocument from '../dist/swagger.json'; 
 import cors from 'cors';
 import { testDbConnection } from './config/db';
 import { config } from 'dotenv';
@@ -12,6 +12,7 @@ import passport from './config/passport';
 import cookieParser from 'cookie-parser';
 import { errorHandler } from './middlewares/errorHandler';
 import { vehicleValidationRules } from './validations/vehicle.validation';
+import { customerValidationRules } from './validations/customer.validation';
 import authMiddleware from './middlewares/authMiddleware';
 import { vinValidationRules } from './validations/vin.validation';
 
@@ -27,13 +28,10 @@ app.use(
     credentials: true,
   })
 );
-
 app.use(express.json());
-app.use(cors());
 app.use(cookieParser());
 app.use(passport.initialize());
 
-// DB connectoin
 (async () => {
   await testDbConnection();
 })();
@@ -56,6 +54,15 @@ app.post(
   }
 );
 
+app.post(
+  '/customers',
+  customerValidationRules,
+  validateRequest,
+  (req: Request, res: Response, next: NextFunction) => {
+    next();
+  }
+);
+
 app.get(
   '/vin',
   vinValidationRules,
@@ -64,8 +71,6 @@ app.get(
     next();
   }
 );
-
-app.use(authMiddleware);
 
 RegisterRoutes(app);
 
