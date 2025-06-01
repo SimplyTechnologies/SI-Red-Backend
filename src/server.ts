@@ -1,10 +1,10 @@
 import express, { NextFunction, Request, Response } from 'express';
 import './models';
-import { RegisterRoutes } from './routes/routes'; 
+import { RegisterRoutes } from './routes/routes'; // Tsoa-generated file
 import { signInValidationRules } from './validations/auth.validation';
 import { validateRequest } from './middlewares/validateRequest';
 import swaggerUi from 'swagger-ui-express';
-import swaggerDocument from '../dist/swagger.json'; 
+import swaggerDocument from '../dist/swagger.json'; // Tsoa-generated file
 import cors from 'cors';
 import { testDbConnection } from './config/db';
 import { config } from 'dotenv';
@@ -71,6 +71,8 @@ app.get(
     next();
   }
 );
+
+app.use(authMiddleware);
 
 RegisterRoutes(app);
 
