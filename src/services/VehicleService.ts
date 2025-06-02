@@ -17,7 +17,7 @@ class VehicleService {
   async getAllVehicles({ userId, page, limit, search }: GetVehiclesOptions) {
     const offset = (page - 1) * limit;
 
-    const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();    
+    const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
 
     const whereClause = search
       ? {
@@ -44,7 +44,7 @@ class VehicleService {
         {
           model: Model,
           as: 'model',
-          required: !!search, 
+          required: !!search,
           attributes: ['name'],
           include: [
             {
@@ -67,6 +67,49 @@ class VehicleService {
         isFavorite: favoriteIds.has(vehicle.id),
       };
     });
+  }
+
+  async getVehicleMapPoints(search?: string) {
+    const whereClause = search
+      ? {
+          [Op.or]: [
+            Sequelize.where(Sequelize.col('model.name'), {
+              [Op.iLike]: `%${search}%`,
+            }),
+            Sequelize.where(Sequelize.col('model.make.name'), {
+              [Op.iLike]: `%${search}%`,
+            }),
+            Sequelize.where(Sequelize.col('year'), {
+              [Op.iLike]: `%${search}%`,
+            }),
+            Sequelize.where(Sequelize.col('vin'), {
+              [Op.iLike]: `%${search}%`,
+            }),
+          ],
+        }
+      : {};
+
+    const vehicles = await Vehicle.findAll({
+      attributes: ['id', 'location'],
+      where: whereClause,
+      include: [
+        {
+          model: Model,
+          as: 'model',
+          required: !!search, 
+          attributes: [],
+          include: [
+            {
+              model: Make,
+              as: 'make',
+              attributes: [],
+            },
+          ],
+        },
+      ],
+    });
+
+    return vehicles.map((vehicle) => vehicle.get({ plain: true }));
   }
 
   async getVehicleById(id: string) {

@@ -38,7 +38,7 @@ export interface VehicleResponse extends VehicleInput {
   location: string;
   model?: ModelInfo;
   isFavorite?: boolean;
-  createdAt?: Date; 
+  createdAt?: Date;
 }
 
 export interface VehicleAttributes {
@@ -63,3 +63,8 @@ export type VehicleCreationAttributes = Optional<
   VehicleAttributes,
   'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
 >;
+
+export type VehicleMapPoint = {
+  id: string;
+  location: string;
+};

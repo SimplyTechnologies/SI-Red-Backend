@@ -12,7 +12,7 @@ import {
   Query,
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
-import { VehicleInput, VehicleResponse } from '../types/vehicle';
+import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
 
 @Route('vehicles')
 @Tags('Vehicle')
@@ -33,6 +33,11 @@ export class VehicleController extends Controller {
     @Query() search?: string
   ): Promise<VehicleResponse[]> {
     return await VehicleService.getAllVehicles({ userId, page, limit, search });
+  }
+
+  @Get('/map-points')
+  public async getVehicleMapPoints(@Query() search?: string): Promise<VehicleMapPoint[]> {
+    return await VehicleService.getVehicleMapPoints(search);
   }
 
   @Get('/{id}')
