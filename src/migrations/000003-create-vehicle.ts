@@ -28,6 +28,16 @@ export async function up(queryInterface: QueryInterface, Sequelize: SequelizeTyp
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     },
+    customer_id: {
+      type: DataTypes.UUID,
+      allowNull: true, // Optional since customer is assigned later
+      references: {
+        model: 'customers',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL', // If a customer is deleted, set customer_id to NULL
+    },
     year: {
       type: DataTypes.STRING,
       allowNull: false,

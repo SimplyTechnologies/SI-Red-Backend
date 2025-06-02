@@ -77,6 +77,16 @@ class VehicleService {
     await vehicle.update(updateData);
     return vehicle;
   }
+
+  async assignCustomerToVehicle(vehicleId: string, customerId: string) {
+    const vehicle = await Vehicle.findByPk(vehicleId);
+    if (!vehicle) {
+      throw new Error('Vehicle not found');
+    }
+
+    await vehicle.update({ customer_id: customerId });
+    return vehicle;
+  }
 }
 
 export default new VehicleService();

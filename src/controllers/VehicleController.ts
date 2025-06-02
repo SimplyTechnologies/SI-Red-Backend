@@ -49,6 +49,15 @@ export class VehicleController extends Controller {
     return updated.get({ plain: true });
   }
 
+  @Put('/{id}/assign-customer')
+  public async assignCustomerToVehicle(
+    @Path() id: string,
+    @Body() requestBody: { customerId: string }
+  ): Promise<VehicleResponse> {
+    const updatedVehicle = await VehicleService.assignCustomerToVehicle(id, requestBody.customerId);
+    return updatedVehicle.get({ plain: true });
+  }
+
   @Delete('/{id}')
   public async deleteVehicle(@Path() id: string): Promise<{ message: string }> {
     return await VehicleService.deleteVehicle(id);

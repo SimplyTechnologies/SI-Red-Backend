@@ -72,7 +72,7 @@ app.get(
   }
 );
 
-app.use(authMiddleware);
+//app.use(authMiddleware);
 
 RegisterRoutes(app);
 
