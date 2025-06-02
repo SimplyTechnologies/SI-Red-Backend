@@ -3,9 +3,10 @@ import { VehicleInput, VehicleResponse } from '../types/vehicle';
 import FavoriteService from './FavoriteService';
 
 class VehicleService {
-  async createVehicle(data: VehicleInput) {
+  async createVehicle(data: VehicleInput, userId: string) {
     const vehicleData = {
       ...data,
+      user_id: userId,
       status: data.status ?? 'in stock',
     };
 

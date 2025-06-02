@@ -29,7 +29,7 @@ export class RefreshController extends Controller {
       const newAccessToken = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
         process.env.JWT_SECRET!,
-        { expiresIn: '15m' }
+        { expiresIn: '15m' } // use Constant that is already ready
       );
 
       return { newAccessToken };

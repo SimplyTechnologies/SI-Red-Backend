@@ -20,7 +20,6 @@ export interface VehicleInput {
   state: string;
   country: string;
   zipcode: string;
-  user_id: string;
   status?: string;
   location: string;
 }
@@ -31,7 +30,7 @@ export interface VehicleResponse extends VehicleInput {
   location: string;
   model?: ModelInfo;
   isFavorite?: boolean;
-  createdAt?: Date; 
+  createdAt?: Date;
 }
 
 export interface VehicleAttributes {
