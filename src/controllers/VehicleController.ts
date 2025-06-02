@@ -10,11 +10,13 @@ import {
   Tags,
   SuccessResponse,
   Request,
+  Query,
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
-import { VehicleInput, VehicleResponse } from '../types/vehicle';
+import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
+import { LIMIT, PAGE } from '../constants/constants';
 
 @Route('vehicles')
 @Tags('Vehicle')
@@ -32,9 +34,19 @@ export class VehicleController extends Controller {
   }
 
   @Get('/')
-  public async getVehicles(@Request() req: AuthenticatedRequest): Promise<VehicleResponse[]> {
+  public async getVehicles(
+    @Request() req: AuthenticatedRequest,
+    @Query() page: number = PAGE,
+    @Query() limit: number = LIMIT,
+    @Query() search?: string
+  ): Promise<VehicleResponse[]> {
     const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
-    return await VehicleService.getAllVehicles(userId);
+    return await VehicleService.getAllVehicles({ userId, page, limit, search });
+  }
+
+  @Get('/map-points')
+  public async getVehicleMapPoints(@Query() search?: string): Promise<VehicleMapPoint[]> {
+    return await VehicleService.getVehicleMapPoints(search);
   }
 
   @Get('/{id}')

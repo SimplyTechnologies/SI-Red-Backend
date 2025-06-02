@@ -1,8 +1,28 @@
 import { Vehicle, Model, Make } from '../models';
-import { VehicleInput, VehicleResponse } from '../types/vehicle';
+import { GetVehiclesOptions, VehicleInput, VehicleResponse } from '../types/vehicle';
 import FavoriteService from './FavoriteService';
+import { Op, Sequelize } from 'sequelize';
 
 class VehicleService {
+  getWhereClauseSearch(search?: string) {
+    return {
+      [Op.or]: [
+        Sequelize.where(Sequelize.col('model.name'), {
+          [Op.iLike]: `%${search}%`,
+        }),
+        Sequelize.where(Sequelize.col('model.make.name'), {
+          [Op.iLike]: `%${search}%`,
+        }),
+        Sequelize.where(Sequelize.col('year'), {
+          [Op.iLike]: `%${search}%`,
+        }),
+        Sequelize.where(Sequelize.col('vin'), {
+          [Op.iLike]: `%${search}%`,
+        }),
+      ],
+    };
+  }
+
   async createVehicle(data: VehicleInput, userId: string) {
     const vehicleData = {
       ...data,
@@ -13,24 +33,35 @@ class VehicleService {
     return await Vehicle.create(vehicleData);
   }
 
-  async getAllVehicles(userId?: string) {
+  async getAllVehicles({ userId, page, limit, search }: GetVehiclesOptions) {
+    const offset = (page - 1) * limit;
+
     const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
 
+    const whereClause = search
+      ? this.getWhereClauseSearch(search)
+      : {};
+
     const vehicles = await Vehicle.findAll({
+      where: whereClause,
       include: [
         {
-          model: Model as typeof Model & { new (): Model },
+          model: Model,
           as: 'model',
+          required: !!search,
           attributes: ['name'],
           include: [
             {
-              model: Make as typeof Make & { new (): Make },
+              model: Make,
               as: 'make',
+              required: false,
               attributes: ['name'],
             },
           ],
         },
       ],
+      limit,
+      offset,
     });
 
     return vehicles.map((vehicle): VehicleResponse => {
@@ -40,6 +71,34 @@ class VehicleService {
         isFavorite: favoriteIds.has(vehicle.id),
       };
     });
+  }
+
+  async getVehicleMapPoints(search?: string) {
+    const whereClause = search
+      ? this.getWhereClauseSearch(search)
+      : {};
+
+    const vehicles = await Vehicle.findAll({
+      attributes: ['id', 'location'],
+      where: whereClause,
+      include: [
+        {
+          model: Model,
+          as: 'model',
+          required: !!search,
+          attributes: [],
+          include: [
+            {
+              model: Make,
+              as: 'make',
+              attributes: [],
+            },
+          ],
+        },
+      ],
+    });
+
+    return vehicles.map((vehicle) => vehicle.get({ plain: true }));
   }
 
   async getVehicleById(id: string) {
