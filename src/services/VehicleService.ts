@@ -4,11 +4,11 @@ import FavoriteService from './FavoriteService';
 import { Op, Sequelize } from 'sequelize';
 
 class VehicleService {
-  async createVehicle(data: VehicleInput) {
+  async createVehicle(data: VehicleInput, userId: string) {
     const vehicleData = {
       ...data,
+      user_id: userId,
       status: data.status ?? 'in stock',
-      location: data.location ?? '',
     };
 
     return await Vehicle.create(vehicleData);

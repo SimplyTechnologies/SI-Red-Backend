@@ -13,6 +13,7 @@ import cookieParser from 'cookie-parser';
 import { errorHandler } from './middlewares/errorHandler';
 import { vehicleValidationRules } from './validations/vehicle.validation';
 import authMiddleware from './middlewares/authMiddleware';
+import { vinValidationRules } from './validations/vin.validation';
 
 config();
 
@@ -46,9 +47,18 @@ app.post(
   }
 );
 
+app.post(
+  '/vehicles',
+  vehicleValidationRules,
+  validateRequest,
+  (req: Request, res: Response, next: NextFunction) => {
+    next();
+  }
+);
+
 app.get(
   '/vin',
-  vehicleValidationRules,
+  vinValidationRules,
   validateRequest,
   (req: Request, res: Response, next: NextFunction) => {
     next();
