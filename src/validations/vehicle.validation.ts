@@ -6,12 +6,14 @@ export const vehicleValidationRules = [
   body('year').isString().notEmpty().withMessage('Year is required'),
 
   body('vin')
+    .notEmpty()
+    .withMessage('Vehicle VIN is required.')
     .isLength({ min: 17, max: 17 })
     .withMessage('VIN must be exactly 17 characters long')
     .matches(/^[A-HJ-NPR-Z0-9]{17}$/)
     .withMessage('VIN contains invalid characters'),
 
-  body('location').notEmpty().withMessage('Location is required'),
+  body('location').notEmpty().withMessage('Vehicle location is required.'),
 
   body('street').trim().notEmpty().withMessage('Street is required'),
 
@@ -20,6 +22,8 @@ export const vehicleValidationRules = [
   body('state').trim().notEmpty().withMessage('State is required'),
 
   body('country').trim().notEmpty().withMessage('Country is required'),
+
+  body('year').trim().notEmpty().withMessage('Vehicle Year is required.'),
 
   body('zipcode')
     .isLength({ min: 4, max: 4 })
