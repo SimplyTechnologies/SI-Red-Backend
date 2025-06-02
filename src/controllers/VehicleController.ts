@@ -16,6 +16,7 @@ import VehicleService from '../services/VehicleService';
 import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
+import { LIMIT, PAGE } from '../constants/constants';
 
 @Route('vehicles')
 @Tags('Vehicle')
@@ -35,8 +36,8 @@ export class VehicleController extends Controller {
   @Get('/')
   public async getVehicles(
     @Request() req: AuthenticatedRequest,
-    @Query() page: number = 1,
-    @Query() limit: number = 10,
+    @Query() page: number = PAGE,
+    @Query() limit: number = LIMIT,
     @Query() search?: string
   ): Promise<VehicleResponse[]> {
     const userId = getUserIdOrThrow(req, this.setStatus.bind(this));

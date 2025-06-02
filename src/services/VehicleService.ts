@@ -4,6 +4,25 @@ import FavoriteService from './FavoriteService';
 import { Op, Sequelize } from 'sequelize';
 
 class VehicleService {
+  getWhereClauseSearch(search?: string) {
+    return {
+      [Op.or]: [
+        Sequelize.where(Sequelize.col('model.name'), {
+          [Op.iLike]: `%${search}%`,
+        }),
+        Sequelize.where(Sequelize.col('model.make.name'), {
+          [Op.iLike]: `%${search}%`,
+        }),
+        Sequelize.where(Sequelize.col('year'), {
+          [Op.iLike]: `%${search}%`,
+        }),
+        Sequelize.where(Sequelize.col('vin'), {
+          [Op.iLike]: `%${search}%`,
+        }),
+      ],
+    };
+  }
+
   async createVehicle(data: VehicleInput, userId: string) {
     const vehicleData = {
       ...data,
@@ -20,22 +39,7 @@ class VehicleService {
     const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
 
     const whereClause = search
-      ? {
-          [Op.or]: [
-            Sequelize.where(Sequelize.col('model.name'), {
-              [Op.iLike]: `%${search}%`,
-            }),
-            Sequelize.where(Sequelize.col('model.make.name'), {
-              [Op.iLike]: `%${search}%`,
-            }),
-            Sequelize.where(Sequelize.col('year'), {
-              [Op.iLike]: `%${search}%`,
-            }),
-            Sequelize.where(Sequelize.col('vin'), {
-              [Op.iLike]: `%${search}%`,
-            }),
-          ],
-        }
+      ? this.getWhereClauseSearch(search)
       : {};
 
     const vehicles = await Vehicle.findAll({
@@ -71,22 +75,7 @@ class VehicleService {
 
   async getVehicleMapPoints(search?: string) {
     const whereClause = search
-      ? {
-          [Op.or]: [
-            Sequelize.where(Sequelize.col('model.name'), {
-              [Op.iLike]: `%${search}%`,
-            }),
-            Sequelize.where(Sequelize.col('model.make.name'), {
-              [Op.iLike]: `%${search}%`,
-            }),
-            Sequelize.where(Sequelize.col('year'), {
-              [Op.iLike]: `%${search}%`,
-            }),
-            Sequelize.where(Sequelize.col('vin'), {
-              [Op.iLike]: `%${search}%`,
-            }),
-          ],
-        }
+      ? this.getWhereClauseSearch(search)
       : {};
 
     const vehicles = await Vehicle.findAll({
@@ -96,7 +85,7 @@ class VehicleService {
         {
           model: Model,
           as: 'model',
-          required: !!search, 
+          required: !!search,
           attributes: [],
           include: [
             {
