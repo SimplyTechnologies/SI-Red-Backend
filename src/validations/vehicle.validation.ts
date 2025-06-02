@@ -24,6 +24,4 @@ export const vehicleValidationRules = [
   body('zipcode')
     .isLength({ min: 4, max: 4 })
     .withMessage('Zipcode must be exactly 4 characters long'),
-
-  body('user_id').isUUID().withMessage('User ID must be a valid UUID'),
 ];
