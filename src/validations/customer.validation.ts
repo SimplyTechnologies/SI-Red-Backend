@@ -26,6 +26,6 @@ export const customerValidationRules = [
     .notEmpty()
     .withMessage('Phone Number is required')
     .bail()
-    .matches(/^(\+374|374|0)?(77|91|93|94|95|96|97|98|99|33)\d{6}$/)
-    .withMessage('Enter a valid Armenian phone number'),
+    .matches(/^\+?[1-9]\d{1,14}$/)
+    .withMessage('Enter a valid phone number'),
 ];
