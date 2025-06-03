@@ -1,4 +1,4 @@
-import { Vehicle, Model, Make } from '../models';
+import { Vehicle, Model, Make, Customer } from '../models';
 import { VehicleInput, VehicleResponse } from '../types/vehicle';
 import FavoriteService from './FavoriteService';
 
@@ -78,15 +78,24 @@ class VehicleService {
     return vehicle;
   }
 
-  async assignCustomerToVehicle(vehicleId: string, customerId: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId);
-    if (!vehicle) {
-      throw new Error('Vehicle not found');
-    }
-
-    await vehicle.update({ customer_id: customerId });
-    return vehicle;
+async assignCustomerToVehicle(vehicleId: string, customerId: string) {
+  const vehicle = await Vehicle.findByPk(vehicleId);
+  if (!vehicle) {
+    throw new Error('Vehicle not found');
   }
+
+  const customer = await Customer.findByPk(customerId);
+  if (!customer) {
+    throw new Error('Customer not found');
+  }
+
+  await vehicle.update({
+    customer_id: customerId,
+    status: 'sold', 
+  });
+
+  return vehicle;
+}
 }
 
 export default new VehicleService();
