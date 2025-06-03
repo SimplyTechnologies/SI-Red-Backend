@@ -7,6 +7,9 @@ export interface UserAttributes {
   passwordHash: string;
   role: UserRole;
   isVerified: boolean;
+  firstName: string | null;
+  lastName: string | null;
+  phoneNumber: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
