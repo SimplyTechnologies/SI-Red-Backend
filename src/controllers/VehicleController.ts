@@ -17,6 +17,7 @@ import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { LIMIT, PAGE } from '../constants/constants';
+import { CreateOrUpdateCustomerRequest } from '../types/customer';
 
 @Route('vehicles')
 @Tags('Vehicle')
@@ -68,13 +69,13 @@ export class VehicleController extends Controller {
     return updated.get({ plain: true });
   }
 
-  @Put('/{id}/assign-customer')
-  public async assignCustomerToVehicle(
+  @Put('/{id}/assign-customer-with-data')
+  public async assignCustomerWithData(
     @Path() id: string,
-    @Body() requestBody: { customerId: string }
+    @Body() customerData: CreateOrUpdateCustomerRequest
   ): Promise<VehicleResponse> {
-    const updatedVehicle = await VehicleService.assignCustomerToVehicle(id, requestBody.customerId);
-    return updatedVehicle.get({ plain: true });
+    const vehicle = await VehicleService.assignCustomerWithData(id, customerData);
+    return vehicle.get({ plain: true });
   }
 
   @Delete('/{id}')

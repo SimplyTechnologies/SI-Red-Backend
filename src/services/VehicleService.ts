@@ -1,7 +1,10 @@
 import { GetVehiclesOptions, VehicleInput, VehicleResponse } from '../types/vehicle';
-import { Vehicle, Model, Make, Customer } from '../models';
+import { Vehicle, Model, Make } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize } from 'sequelize';
+import CustomerService from './CustomerService';
+import createError from 'http-errors';
+import { CreateOrUpdateCustomerRequest } from '../types/customer';
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -38,9 +41,7 @@ class VehicleService {
 
     const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
 
-    const whereClause = search
-      ? this.getWhereClauseSearch(search)
-      : {};
+    const whereClause = search ? this.getWhereClauseSearch(search) : {};
 
     const vehicles = await Vehicle.findAll({
       where: whereClause,
@@ -74,9 +75,7 @@ class VehicleService {
   }
 
   async getVehicleMapPoints(search?: string) {
-    const whereClause = search
-      ? this.getWhereClauseSearch(search)
-      : {};
+    const whereClause = search ? this.getWhereClauseSearch(search) : {};
 
     const vehicles = await Vehicle.findAll({
       attributes: ['id', 'location'],
@@ -138,24 +137,25 @@ class VehicleService {
     return vehicle;
   }
 
-async assignCustomerToVehicle(vehicleId: string, customerId: string) {
-  const vehicle = await Vehicle.findByPk(vehicleId);
-  if (!vehicle) {
-    throw new Error('Vehicle not found');
+  async assignCustomerWithData(vehicleId: string, customerData: CreateOrUpdateCustomerRequest) {
+    const vehicle = await Vehicle.findByPk(vehicleId);
+    if (!vehicle) {
+      throw new createError.NotFound('Vehicle not found');
+    }
+
+    if (vehicle.customer_id) {
+      throw new createError.Conflict('Vehicle already assigned to a customer');
+    }
+
+    const customer = await CustomerService.createOrUpdateCustomer(customerData);
+
+    await vehicle.update({
+      customer_id: customer.id,
+      status: 'sold',
+    });
+
+    return vehicle;
   }
-
-  const customer = await Customer.findByPk(customerId);
-  if (!customer) {
-    throw new Error('Customer not found');
-  }
-
-  await vehicle.update({
-    customer_id: customerId,
-    status: 'sold', 
-  });
-
-  return vehicle;
-}
 }
 
 export default new VehicleService();
