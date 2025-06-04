@@ -5,21 +5,29 @@ import { GetUsersOptions } from '../types/user';
 import { LIMIT, PAGE } from '../constants/constants';
 
 class UserService {
-  async getAllUsers({ page = PAGE, limit = LIMIT, search }: GetUsersOptions) {
+  async getAllUsers({
+    page = PAGE,
+    limit = LIMIT,
+    search,
+    excludeUserId,
+  }: GetUsersOptions & { excludeUserId?: string }) {
     const offset = (page - 1) * limit;
 
-    const whereClause = search
-      ? {
-          [Op.or]: [
-            Sequelize.where(
-              Sequelize.fn('concat', Sequelize.col('firstName'), ' ', Sequelize.col('lastName')),
-              {
-                [Op.iLike]: `%${search}%`,
-              }
-            ),
-          ],
-        }
-      : {};
+    const whereClause: Record<string, unknown> = {
+      ...(search && {
+        [Op.or]: [
+          Sequelize.where(
+            Sequelize.fn('concat', Sequelize.col('firstName'), ' ', Sequelize.col('lastName')),
+            {
+              [Op.iLike]: `%${search}%`,
+            }
+          ),
+        ],
+      }),
+      ...(excludeUserId && {
+        id: { [Op.ne]: excludeUserId },
+      }),
+    };
 
     const { count, rows } = await User.findAndCountAll({
       where: whereClause,
