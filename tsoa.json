@@ -1,15 +1,28 @@
 {
-    "controllerPathGlobs": ["src/controllers/*.ts"],
-    "routes": {
-        "routesDir": "src/routes",
-        "middleware": "express"
+  "controllerPathGlobs": ["src/controllers/*.ts"],
+  "routes": {
+    "routesDir": "src/routes",
+    "middleware": "express",
+    "authenticationModule": "src/middlewares/tsoaAuth"
+  },
+  "spec": {
+    "outputDirectory": "dist",
+    "specVersion": 3,
+    "securityDefinitions": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
     },
-    "spec": {
-        "outputDirectory": "dist",
-        "specVersion": 3
-    },
-    "noImplicitAdditionalProperties": "throw-on-extras",
-    "controller": {
-        "useRequest": true
-    }
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ]
+  },
+  "noImplicitAdditionalProperties": "throw-on-extras",
+  "controller": {
+    "useRequest": true
+  }
 }

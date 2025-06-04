@@ -1,5 +1,6 @@
 import { User } from '../models/User.model';
 import { Op, Sequelize } from 'sequelize';
+import createError from 'http-errors';
 
 interface GetUsersOptions {
   page?: number;
@@ -14,10 +15,12 @@ class UserService {
     const whereClause = search
       ? {
           [Op.or]: [
-            { email: { [Op.iLike]: `%${search}%` } },
-            Sequelize.where(Sequelize.cast(Sequelize.col('role'), 'TEXT'), {
-              [Op.iLike]: `%${search}%`,
-            }),
+            Sequelize.where(
+              Sequelize.fn('concat', Sequelize.col('firstName'), ' ', Sequelize.col('lastName')),
+              {
+                [Op.iLike]: `%${search}%`,
+              }
+            ),
           ],
         }
       : {};
@@ -33,6 +36,15 @@ class UserService {
       total: count,
       users: rows.map((user) => user.get({ plain: true })),
     };
+  }
+  async deleteUser(id: string): Promise<{ message: string }> {
+    const user = await User.findByPk(id);
+    if (!user) {
+      throw new createError.NotFound('User not found');
+    }
+
+    await user.destroy();
+    return { message: 'User deleted successfully' };
   }
 }
 
