@@ -9,25 +9,44 @@ import {
   Route,
   Tags,
   SuccessResponse,
+  Request,
   Query,
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
-import { VehicleInput, VehicleResponse } from '../types/vehicle';
+import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
+import { AuthenticatedRequest } from '../types/auth';
+import { getUserIdOrThrow } from '../utils/auth';
+import { LIMIT, PAGE } from '../constants/constants';
 
 @Route('vehicles')
 @Tags('Vehicle')
 export class VehicleController extends Controller {
   @Post('/')
   @SuccessResponse('201', 'Created')
-  public async createVehicle(@Body() requestBody: VehicleInput): Promise<VehicleResponse> {
-    const newVehicle = await VehicleService.createVehicle(requestBody);
+  public async createVehicle(
+    @Request() req: AuthenticatedRequest,
+    @Body() requestBody: VehicleInput
+  ): Promise<VehicleResponse> {
+    const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
+    const newVehicle = await VehicleService.createVehicle(requestBody, userId);
     this.setStatus(201);
     return newVehicle.get({ plain: true });
   }
 
   @Get('/')
-  public async getVehicles(@Query() userId?: string): Promise<VehicleResponse[]> {
-    return await VehicleService.getAllVehicles(userId);
+  public async getVehicles(
+    @Request() req: AuthenticatedRequest,
+    @Query() page: number = PAGE,
+    @Query() limit: number = LIMIT,
+    @Query() search?: string
+  ): Promise<VehicleResponse[]> {
+    const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
+    return await VehicleService.getAllVehicles({ userId, page, limit, search });
+  }
+
+  @Get('/map-points')
+  public async getVehicleMapPoints(@Query() search?: string): Promise<VehicleMapPoint[]> {
+    return await VehicleService.getVehicleMapPoints(search);
   }
 
   @Get('/{id}')

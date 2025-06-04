@@ -11,6 +11,13 @@ export interface ModelInfo {
   make: MakeInfo;
 }
 
+export interface GetVehiclesOptions {
+  userId?: string;
+  page: number;
+  limit: number;
+  search?: string;
+}
+
 export interface VehicleInput {
   model_id: number;
   year: string;
@@ -58,4 +65,9 @@ export interface VehicleAttributes {
 export type VehicleCreationAttributes = Optional<
   VehicleAttributes,
   'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'customer_id' 
-  >;
+>;
+
+export type VehicleMapPoint = {
+  id: string;
+  location: string;
+};

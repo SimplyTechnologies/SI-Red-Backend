@@ -24,7 +24,7 @@ export type CustomerCreationAttributes = Optional<CustomerAttributes, 'id' | 'cr
 
 export interface CreateOrUpdateCustomerRequest {
   email: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
 }

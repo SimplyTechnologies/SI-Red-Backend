@@ -3,3 +3,6 @@ export const JWT_TOKEN_EXPIRATION = {
   REFRESH_TOKEN_EXPIRATION_REMEMBERED: '30d',
   REFRESH_TOKEN_EXPIRATION_SESSION: '1d',
 } as const;
+
+export const PAGE = 1;
+export const LIMIT = 10;
