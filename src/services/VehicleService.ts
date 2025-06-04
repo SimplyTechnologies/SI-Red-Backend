@@ -5,6 +5,7 @@ import { Op, Sequelize } from 'sequelize';
 import CustomerService from './CustomerService';
 import createError from 'http-errors';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
+import { sequelize } from '../config/db';
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -137,24 +138,41 @@ class VehicleService {
     return vehicle;
   }
 
-  async assignCustomerWithData(vehicleId: string, customerData: CreateOrUpdateCustomerRequest) {
-    const vehicle = await Vehicle.findByPk(vehicleId);
-    if (!vehicle) {
-      throw new createError.NotFound('Vehicle not found');
-    }
+  async assignCustomerWithData(
+    vehicleId: string,
+    customerData: CreateOrUpdateCustomerRequest
+  ): Promise<{
+    vehicle: Vehicle;
+    message: string;
+  }> {
+    return await sequelize.transaction(async (t) => {
+      const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
+      if (!vehicle) {
+        throw new createError.NotFound('Vehicle not found');
+      }
 
-    if (vehicle.customer_id) {
-      throw new createError.Conflict('Vehicle already assigned to a customer');
-    }
+      const customer = await CustomerService.createOrUpdateCustomer(customerData, t);
 
-    const customer = await CustomerService.createOrUpdateCustomer(customerData);
+      if (vehicle.customer_id && vehicle.customer_id !== customer.id) {
+        throw new createError.Conflict('Vehicle already assigned to another customer');
+      }
 
-    await vehicle.update({
-      customer_id: customer.id,
-      status: 'sold',
+      const isNew = vehicle.customer_id !== customer.id;
+
+      await vehicle.update(
+        {
+          customer_id: customer.id,
+          status: 'sold',
+        },
+        { transaction: t }
+      );
+
+      const message = isNew
+        ? 'Customer created and assigned successfully'
+        : 'Customer updated and assigned successfully';
+
+      return { vehicle, message };
     });
-
-    return vehicle;
   }
 }
 

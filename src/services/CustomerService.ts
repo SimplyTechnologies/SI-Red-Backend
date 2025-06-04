@@ -1,8 +1,12 @@
 import { Customer } from '../models/Customer.model';
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
 
 class CustomerService {
+  async getAllCustomers(): Promise<Customer[]> {
+    return await Customer.findAll();
+  }
+
   async suggestCustomers(email: string): Promise<Customer[]> {
     return await Customer.findAll({
       where: {
@@ -13,19 +17,21 @@ class CustomerService {
     });
   }
 
-  async createOrUpdateCustomer(data: CreateOrUpdateCustomerRequest): Promise<Customer> {
-    const existingCustomer = await Customer.findOne({ where: { email: data.email } });
+  async createOrUpdateCustomer(
+    data: CreateOrUpdateCustomerRequest,
+    transaction?: Transaction
+  ): Promise<Customer> {
+    const existingCustomer = await Customer.findOne({
+      where: { email: data.email },
+      transaction,
+    });
 
     if (existingCustomer) {
-      await existingCustomer.update(data);
+      await existingCustomer.update(data, { transaction });
       return existingCustomer;
     }
 
-    return await Customer.create(data);
-  }
-
-  async getAllCustomers(): Promise<Customer[]> {
-    return await Customer.findAll();
+    return await Customer.create(data, { transaction });
   }
 }
 

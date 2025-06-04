@@ -27,15 +27,14 @@ export interface VehicleInput {
   state: string;
   country: string;
   zipcode: string;
-  customer_id?: string; 
-  user_id: string;
+  customer_id?: string;
   status?: string;
   location: string;
 }
 
 export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
   id: string;
-  customer_id?: string; 
+  customer_id?: string;
   status: string;
   location: string;
   model?: ModelInfo;
@@ -48,7 +47,7 @@ export interface VehicleAttributes {
   model_id: number;
   user_id: string;
   year: string;
-  customer_id?: string; 
+  customer_id?: string;
   vin: string;
   street: string;
   city: string;
@@ -64,7 +63,7 @@ export interface VehicleAttributes {
 
 export type VehicleCreationAttributes = Optional<
   VehicleAttributes,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'customer_id' 
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'customer_id'
 >;
 
 export type VehicleMapPoint = {
