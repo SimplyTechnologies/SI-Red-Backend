@@ -1,14 +1,12 @@
-import { DataTypes, Model as SequelizeModel } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../config/db';
 import { VehicleAttributes, VehicleCreationAttributes } from '../types/vehicle';
 
-export class Vehicle
-  extends SequelizeModel<VehicleAttributes, VehicleCreationAttributes>
-  implements VehicleAttributes
-{
+export class Vehicle extends Model<VehicleAttributes, VehicleCreationAttributes> implements VehicleAttributes {
   public id!: string;
   public model_id!: number;
   public user_id!: string;
+  public customer_id!: string;
   public year!: string;
   public vin!: string;
   public street!: string;
@@ -44,6 +42,14 @@ Vehicle.init(
       allowNull: false,
       references: {
         model: 'users',
+        key: 'id',
+      },
+    },
+    customer_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'customers',
         key: 'id',
       },
     },

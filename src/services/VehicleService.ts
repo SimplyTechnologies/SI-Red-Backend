@@ -1,5 +1,5 @@
-import { Vehicle, Model, Make } from '../models';
 import { GetVehiclesOptions, VehicleInput, VehicleResponse } from '../types/vehicle';
+import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize } from 'sequelize';
 
@@ -137,6 +137,25 @@ class VehicleService {
     await vehicle.update(updateData);
     return vehicle;
   }
+
+async assignCustomerToVehicle(vehicleId: string, customerId: string) {
+  const vehicle = await Vehicle.findByPk(vehicleId);
+  if (!vehicle) {
+    throw new Error('Vehicle not found');
+  }
+
+  const customer = await Customer.findByPk(customerId);
+  if (!customer) {
+    throw new Error('Customer not found');
+  }
+
+  await vehicle.update({
+    customer_id: customerId,
+    status: 'sold', 
+  });
+
+  return vehicle;
+}
 }
 
 export default new VehicleService();
