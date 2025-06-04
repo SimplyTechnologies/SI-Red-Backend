@@ -1,7 +1,10 @@
-import { Vehicle, Model, Make } from '../models';
 import { GetVehiclesOptions, VehicleInput, VehicleResponse } from '../types/vehicle';
+import { Vehicle, Model, Make } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize } from 'sequelize';
+import CustomerService from './CustomerService';
+import createError from 'http-errors';
+import { CreateOrUpdateCustomerRequest } from '../types/customer';
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -38,9 +41,7 @@ class VehicleService {
 
     const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
 
-    const whereClause = search
-      ? this.getWhereClauseSearch(search)
-      : {};
+    const whereClause = search ? this.getWhereClauseSearch(search) : {};
 
     const vehicles = await Vehicle.findAll({
       where: whereClause,
@@ -74,9 +75,7 @@ class VehicleService {
   }
 
   async getVehicleMapPoints(search?: string) {
-    const whereClause = search
-      ? this.getWhereClauseSearch(search)
-      : {};
+    const whereClause = search ? this.getWhereClauseSearch(search) : {};
 
     const vehicles = await Vehicle.findAll({
       attributes: ['id', 'location'],
@@ -135,6 +134,26 @@ class VehicleService {
       throw new Error('Vehicle not found');
     }
     await vehicle.update(updateData);
+    return vehicle;
+  }
+
+  async assignCustomerWithData(vehicleId: string, customerData: CreateOrUpdateCustomerRequest) {
+    const vehicle = await Vehicle.findByPk(vehicleId);
+    if (!vehicle) {
+      throw new createError.NotFound('Vehicle not found');
+    }
+
+    if (vehicle.customer_id) {
+      throw new createError.Conflict('Vehicle already assigned to a customer');
+    }
+
+    const customer = await CustomerService.createOrUpdateCustomer(customerData);
+
+    await vehicle.update({
+      customer_id: customer.id,
+      status: 'sold',
+    });
+
     return vehicle;
   }
 }

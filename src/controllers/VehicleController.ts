@@ -17,6 +17,10 @@ import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { LIMIT, PAGE } from '../constants/constants';
+import { CreateOrUpdateCustomerRequest } from '../types/customer';
+import { Middlewares } from 'tsoa';
+import { customerValidationRules } from '../validations/customer.validation';
+import { validateRequest } from '../middlewares/validateRequest';
 
 @Route('vehicles')
 @Tags('Vehicle')
@@ -66,6 +70,16 @@ export class VehicleController extends Controller {
   ): Promise<VehicleResponse> {
     const updated = await VehicleService.updateVehicle(id, updateData);
     return updated.get({ plain: true });
+  }
+
+  @Put('/{id}/assign-customer-with-data')
+  @Middlewares([customerValidationRules, validateRequest])
+  public async assignCustomerWithData(
+    @Path() id: string,
+    @Body() customerData: CreateOrUpdateCustomerRequest
+  ): Promise<VehicleResponse> {
+    const vehicle = await VehicleService.assignCustomerWithData(id, customerData);
+    return vehicle.get({ plain: true });
   }
 
   @Delete('/{id}')

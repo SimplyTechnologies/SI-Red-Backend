@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { HttpError } from 'http-errors';
 
 export function errorHandler(err: unknown, req: Request, res: Response) {
-  const error = err as Partial<HttpError>;
 
+  const error = err as Partial<HttpError>;
   const status = error.status ?? 500;
   const message = error.message ?? 'Something went wrong';
 

@@ -1,10 +1,10 @@
 import express, { NextFunction, Request, Response } from 'express';
 import './models';
-import { RegisterRoutes } from './routes/routes'; // that is tsoa generated file
+import { RegisterRoutes } from './routes/routes'; // Tsoa-generated file
 import { signInValidationRules } from './validations/auth.validation';
 import { validateRequest } from './middlewares/validateRequest';
 import swaggerUi from 'swagger-ui-express';
-import swaggerDocument from '../dist/swagger.json'; // that is tsoa generated file
+import swaggerDocument from '../dist/swagger.json'; // Tsoa-generated file
 import cors from 'cors';
 import { testDbConnection } from './config/db';
 import { config } from 'dotenv';
@@ -28,13 +28,10 @@ app.use(
     credentials: true,
   })
 );
-
 app.use(express.json());
-app.use(cors());
 app.use(cookieParser());
 app.use(passport.initialize());
 
-// DB connectoin
 (async () => {
   await testDbConnection();
 })();

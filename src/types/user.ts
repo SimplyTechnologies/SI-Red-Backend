@@ -50,3 +50,9 @@ export interface RefreshResponse {
   newAccessToken?: string;
   message?: string;
 }
+
+export interface GetUsersOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
