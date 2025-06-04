@@ -1,5 +1,21 @@
-
 export type UserRole = 'SUPER_ADMIN' | 'USER';
+
+export interface CreateUserDTO {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+}
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  role: UserRole;
+  isVerified: boolean;
+  firstName: string | null;
+  lastName: string | null;
+  phoneNumber: string | null;
+}
 
 export interface UserAttributes {
   id: string;
