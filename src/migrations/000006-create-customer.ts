@@ -39,5 +39,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
 }
 
 export async function down(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.removeConstraint('vehicles', 'vehicles_customer_id_fkey');
   await queryInterface.dropTable('customers');
+
 }
