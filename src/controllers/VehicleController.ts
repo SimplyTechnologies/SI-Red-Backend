@@ -18,6 +18,9 @@ import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { LIMIT, PAGE } from '../constants/constants';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
+import { Middlewares } from 'tsoa';
+import { customerValidationRules } from '../validations/customer.validation';
+import { validateRequest } from '../middlewares/validateRequest';
 
 @Route('vehicles')
 @Tags('Vehicle')
@@ -70,6 +73,7 @@ export class VehicleController extends Controller {
   }
 
   @Put('/{id}/assign-customer-with-data')
+  @Middlewares([customerValidationRules, validateRequest])
   public async assignCustomerWithData(
     @Path() id: string,
     @Body() customerData: CreateOrUpdateCustomerRequest

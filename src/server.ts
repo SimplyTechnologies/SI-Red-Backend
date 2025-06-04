@@ -12,7 +12,6 @@ import passport from './config/passport';
 import cookieParser from 'cookie-parser';
 import { errorHandler } from './middlewares/errorHandler';
 import { vehicleValidationRules } from './validations/vehicle.validation';
-import { customerValidationRules } from './validations/customer.validation';
 import authMiddleware from './middlewares/authMiddleware';
 import { vinValidationRules } from './validations/vin.validation';
 
@@ -48,15 +47,6 @@ app.post(
 app.post(
   '/vehicles',
   vehicleValidationRules,
-  validateRequest,
-  (req: Request, res: Response, next: NextFunction) => {
-    next();
-  }
-);
-
-app.post(
-  '/customers',
-  customerValidationRules,
   validateRequest,
   (req: Request, res: Response, next: NextFunction) => {
     next();
