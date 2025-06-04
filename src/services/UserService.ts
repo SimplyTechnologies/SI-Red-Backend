@@ -1,15 +1,11 @@
 import { User } from '../models/User.model';
 import { Op, Sequelize } from 'sequelize';
 import createError from 'http-errors';
-
-interface GetUsersOptions {
-  page?: number;
-  limit?: number;
-  search?: string;
-}
+import { GetUsersOptions } from '../types/user';
+import { LIMIT, PAGE } from '../constants/constants';
 
 class UserService {
-  async getAllUsers({ page = 1, limit = 10, search }: GetUsersOptions) {
+  async getAllUsers({ page = PAGE, limit = LIMIT, search }: GetUsersOptions) {
     const offset = (page - 1) * limit;
 
     const whereClause = search
@@ -37,6 +33,7 @@ class UserService {
       users: rows.map((user) => user.get({ plain: true })),
     };
   }
+
   async deleteUser(id: string): Promise<{ message: string }> {
     const user = await User.findByPk(id);
     if (!user) {

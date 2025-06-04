@@ -1,4 +1,3 @@
-
 export type UserRole = 'SUPER_ADMIN' | 'USER';
 
 export interface UserAttributes {
@@ -33,4 +32,10 @@ export interface RefreshRequest {
 export interface RefreshResponse {
   newAccessToken?: string;
   message?: string;
+}
+
+export interface GetUsersOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
 }
