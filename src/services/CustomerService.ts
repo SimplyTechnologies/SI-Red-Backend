@@ -1,14 +1,19 @@
 import { Customer } from '../models/Customer.model';
 import { Vehicle } from '../models/Vehicle.model';
-import { Op, Transaction } from 'sequelize'; 
+import { Op, Transaction } from 'sequelize';
 import { CreateOrUpdateCustomerRequest, CustomerResponse } from '../types/customer';
+import { Make, Model } from '../models';
 
 class CustomerService {
   async getAllCustomers({
     page,
     limit,
     search,
-  }: { page: number; limit: number; search?: string }): Promise<{ total: number; customers: CustomerResponse[] }> {
+  }: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): Promise<{ total: number; customers: CustomerResponse[] }> {
     const offset = (page - 1) * limit;
 
     const whereClause = search
@@ -31,11 +36,27 @@ class CustomerService {
           model: Vehicle,
           as: 'vehicles',
           attributes: ['id', 'model_id', 'year', 'vin', 'status', 'assignedDate'],
+          include: [
+            {
+              model: Model,
+              as: 'model',
+              attributes: ['name'],
+              include: [
+                {
+                  model: Make,
+                  as: 'make',
+                  attributes: ['name'],
+                },
+              ],
+            },
+          ],
         },
       ],
     });
 
-    const customers: CustomerResponse[] = rows.map((customer: Customer) => customer.get({ plain: true }));
+    const customers: CustomerResponse[] = rows.map((customer: Customer) =>
+      customer.get({ plain: true })
+    );
 
     return {
       total: count,

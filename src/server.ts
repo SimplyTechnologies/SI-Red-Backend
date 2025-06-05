@@ -44,7 +44,6 @@ app.post(
   }
 );
 
-
 app.post(
   '/vehicles',
   vehicleValidationRules,

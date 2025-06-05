@@ -14,12 +14,8 @@ export class CustomerController extends Controller {
     }
 
     const customers = await CustomerService.suggestCustomers(email);
-    if (customers.length === 0) {
-      this.setStatus(404);
-      throw new Error('No customers found for the given email');
-    }
 
-    return customers; 
+    return customers;
   }
 
   @Get('/')
@@ -29,15 +25,9 @@ export class CustomerController extends Controller {
     @Query() search?: string
   ): Promise<{ total: number; customers: CustomerResponse[] }> {
     const { total, customers } = await CustomerService.getAllCustomers({ page, limit, search });
-
-    if (customers.length === 0) {
-      this.setStatus(404);
-      throw new Error('No customers found');
-    }
-
     return {
       total,
-      customers, 
+      customers,
     };
   }
 
