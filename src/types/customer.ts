@@ -5,7 +5,7 @@ export interface CustomerAttributes {
   email: string;
   firstName?: string;
   lastName?: string;
-  phone?: string;
+  phoneNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,7 +15,7 @@ export interface CustomerResponse {
   email: string;
   firstName?: string;
   lastName?: string;
-  phone?: string;
+  phoneNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,5 +26,5 @@ export interface CreateOrUpdateCustomerRequest {
   email: string;
   firstName: string;
   lastName: string;
-  phone: string;
+  phoneNumber: string;
 }

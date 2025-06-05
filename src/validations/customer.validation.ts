@@ -22,7 +22,7 @@ export const customerValidationRules = [
     .isString()
     .withMessage('Last Name must be a string'),
 
-  body('phone')
+  body('phoneNumber')
     .notEmpty()
     .withMessage('Phone Number is required')
     .bail()
