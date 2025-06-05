@@ -1,4 +1,4 @@
-import { Controller, Get, Route, Tags, Query } from 'tsoa';
+import { Controller, Get, Route, Tags, Query, Delete, Path } from 'tsoa';
 import CustomerService from '../services/CustomerService';
 import { CustomerResponse } from '../types/customer';
 
@@ -38,5 +38,17 @@ export class CustomerController extends Controller {
       total,
       customers, 
     };
+  }
+
+  @Delete('/{id}')
+  public async deleteCustomer(@Path() id: string): Promise<{ message: string }> {
+    const deleted = await CustomerService.deleteCustomer(id);
+
+    if (!deleted) {
+      this.setStatus(404);
+      throw new Error('Customer not found');
+    }
+
+    return { message: 'Customer deleted successfully' };
   }
 }

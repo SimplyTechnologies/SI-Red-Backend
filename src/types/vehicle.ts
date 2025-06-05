@@ -30,7 +30,7 @@ export interface VehicleInput {
   customer_id?: string;
   status?: string;
   location: string;
-  assignedDate?: Date; 
+  assignedDate?: Date | null; 
 }
 
 export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
@@ -40,7 +40,7 @@ export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
   location: string;
   model?: ModelInfo;
   isFavorite?: boolean;
-  assignedDate?: Date;
+  assignedDate?: Date | null;
   createdAt?: Date;
 }
 
@@ -58,7 +58,7 @@ export interface VehicleAttributes {
   zipcode: string;
   status: string;
   location: string;
-  assignedDate?: Date; 
+  assignedDate?: Date | null; 
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;

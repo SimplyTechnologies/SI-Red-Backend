@@ -1,5 +1,6 @@
 import { Customer } from '../models/Customer.model';
-import { Op, Transaction, Sequelize } from 'sequelize';
+import { Vehicle } from '../models/Vehicle.model';
+import { Op, Transaction } from 'sequelize'; 
 import { CreateOrUpdateCustomerRequest, CustomerResponse } from '../types/customer';
 
 class CustomerService {
@@ -10,26 +11,28 @@ class CustomerService {
   }: { page: number; limit: number; search?: string }): Promise<{ total: number; customers: CustomerResponse[] }> {
     const offset = (page - 1) * limit;
 
-    const whereClause: Record<string, unknown> = {
-      ...(search && {
-        [Op.or]: [
-          Sequelize.where(
-            Sequelize.fn('concat', Sequelize.col('firstName'), ' ', Sequelize.col('lastName')),
-            {
-              [Op.iLike]: `%${search.trim()}%`,
-            }
-          ),
-          { email: { [Op.iLike]: `%${search.trim()}%` } },
-          { phone: { [Op.iLike]: `%${search.trim()}%` } },
-        ],
-      }),
-    };
+    const whereClause = search
+      ? {
+          [Op.or]: [
+            { firstName: { [Op.iLike]: `%${search}%` } },
+            { lastName: { [Op.iLike]: `%${search}%` } },
+            { email: { [Op.iLike]: `%${search}%` } },
+          ],
+        }
+      : undefined;
 
     const { count, rows } = await Customer.findAndCountAll({
-      where: whereClause,
       limit,
       offset,
       order: [['createdAt', 'DESC']],
+      where: whereClause,
+      include: [
+        {
+          model: Vehicle,
+          as: 'vehicles',
+          attributes: ['id', 'model_id', 'year', 'vin', 'status', 'assignedDate'],
+        },
+      ],
     });
 
     const customers: CustomerResponse[] = rows.map((customer: Customer) => customer.get({ plain: true }));
@@ -67,6 +70,23 @@ class CustomerService {
     }
 
     return await Customer.create(data, { transaction });
+  }
+
+  async deleteCustomer(id: string): Promise<boolean> {
+    const customer = await Customer.findByPk(id);
+
+    if (!customer) {
+      return false;
+    }
+
+    await customer.update({ deletedAt: new Date() });
+
+    await Vehicle.update(
+      { status: 'in stock', assignedDate: null },
+      { where: { customer_id: id } }
+    );
+
+    return true;
   }
 }
 
