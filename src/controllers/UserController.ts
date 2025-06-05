@@ -11,6 +11,7 @@ import {
   Delete,
   Path,
   Security,
+  Middlewares,
 } from 'tsoa';
 import { UserService } from '../services/UserService';
 import { UserResponse } from '../types/user';
@@ -21,6 +22,8 @@ import { LIMIT, PAGE } from '../constants/constants';
 import { UserAttributes } from '../types/user';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
+import { validateCreateUser } from '../validations/addUser.validation';
+import { validateRequest } from '../middlewares/validateRequest';
 
 @Route('users')
 @Tags('User')
@@ -29,14 +32,13 @@ export class UserController extends Controller {
   private userService = new UserService();
 
   @Post('/')
+  @Middlewares([validateCreateUser, validateRequest])
   @SuccessResponse('201', 'User Created')
   public async createUser(
     @Request() req: AuthenticatedRequest,
     @Body() body: CreateUserDTO
   ): Promise<UserResponse> {
     if (req.user?.role !== USER_ROLE.SUPER_ADMIN) {
-      console.log('>>>>>>>', 'NOT SUPER USER');
-
       throw new createError.Forbidden('Only superusers can create users');
     }
 

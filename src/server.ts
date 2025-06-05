@@ -14,7 +14,6 @@ import { errorHandler } from './middlewares/errorHandler';
 import { vehicleValidationRules } from './validations/vehicle.validation';
 import authMiddleware from './middlewares/authMiddleware';
 import { vinValidationRules } from './validations/vin.validation';
-import { validateCreateUser } from './validations/addUser.validation';
 
 config();
 
@@ -45,7 +44,6 @@ app.post(
   }
 );
 
-app.post('/users', validateCreateUser, validateRequest);
 
 app.post(
   '/vehicles',

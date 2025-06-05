@@ -5,7 +5,7 @@ export const validateCreateUser = [
     .isEmail()
     .withMessage('A valid email is required')
     .notEmpty()
-    .withMessage('Vehicle location is required.'),
+    .withMessage('Email is required.'),
 
   body('firstName')
     .isString()
