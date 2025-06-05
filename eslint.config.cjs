@@ -18,6 +18,7 @@ module.exports = [
     },
     rules: {
       ...ts.configs.recommended.rules,
+      
     },
   },
   prettier,

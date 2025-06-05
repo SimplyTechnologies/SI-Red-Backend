@@ -8,6 +8,7 @@ export interface CustomerAttributes {
   phoneNumber?: string;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt?: Date; 
 }
 
 export interface CustomerResponse {
@@ -18,13 +19,19 @@ export interface CustomerResponse {
   phoneNumber?: string;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt?: Date; 
 }
 
-export type CustomerCreationAttributes = Optional<CustomerAttributes, 'id' | 'createdAt' | 'updatedAt'>;
+export type CustomerCreationAttributes = Optional<CustomerAttributes, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>;
 
 export interface CreateOrUpdateCustomerRequest {
   email: string;
   firstName: string;
   lastName: string;
   phoneNumber: string;
+}
+export interface GetAllCustomersParams {
+  page: number;
+  limit: number;
+  search?: string; 
 }

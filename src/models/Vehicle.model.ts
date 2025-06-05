@@ -16,6 +16,7 @@ export class Vehicle extends Model<VehicleAttributes, VehicleCreationAttributes>
   public zipcode!: string;
   public status!: string;
   public location!: string;
+  public assignedDate!: Date | undefined; 
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -92,12 +93,18 @@ Vehicle.init(
       allowNull: false,
       defaultValue: '',
     },
+    assignedDate: { 
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     modelName: 'Vehicle',
     tableName: 'vehicles',
-    paranoid: true, // for soft deletes
+    paranoid: true, 
     timestamps: true,
   }
 );
+
+export default Vehicle;

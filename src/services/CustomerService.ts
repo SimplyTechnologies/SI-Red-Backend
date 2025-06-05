@@ -1,20 +1,58 @@
 import { Customer } from '../models/Customer.model';
-import { Op, Transaction } from 'sequelize';
-import { CreateOrUpdateCustomerRequest } from '../types/customer';
+import { Vehicle } from '../models/Vehicle.model';
+import { Op, Transaction } from 'sequelize'; 
+import { CreateOrUpdateCustomerRequest, CustomerResponse } from '../types/customer';
 
 class CustomerService {
-  async getAllCustomers(): Promise<Customer[]> {
-    return await Customer.findAll();
+  async getAllCustomers({
+    page,
+    limit,
+    search,
+  }: { page: number; limit: number; search?: string }): Promise<{ total: number; customers: CustomerResponse[] }> {
+    const offset = (page - 1) * limit;
+
+    const whereClause = search
+      ? {
+          [Op.or]: [
+            { firstName: { [Op.iLike]: `%${search}%` } },
+            { lastName: { [Op.iLike]: `%${search}%` } },
+            { email: { [Op.iLike]: `%${search}%` } },
+          ],
+        }
+      : undefined;
+
+    const { count, rows } = await Customer.findAndCountAll({
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+      where: whereClause,
+      include: [
+        {
+          model: Vehicle,
+          as: 'vehicles',
+          attributes: ['id', 'model_id', 'year', 'vin', 'status', 'assignedDate'],
+        },
+      ],
+    });
+
+    const customers: CustomerResponse[] = rows.map((customer: Customer) => customer.get({ plain: true }));
+
+    return {
+      total: count,
+      customers,
+    };
   }
 
-  async suggestCustomers(email: string): Promise<Customer[]> {
-    return await Customer.findAll({
+  async suggestCustomers(email: string): Promise<CustomerResponse[]> {
+    const customers = await Customer.findAll({
       where: {
         email: {
-          [Op.like]: `%${email}%`,
+          [Op.iLike]: `%${email}%`,
         },
       },
     });
+
+    return customers.map((customer: Customer) => customer.get({ plain: true }));
   }
 
   async createOrUpdateCustomer(
@@ -32,6 +70,23 @@ class CustomerService {
     }
 
     return await Customer.create(data, { transaction });
+  }
+
+  async deleteCustomer(id: string): Promise<boolean> {
+    const customer = await Customer.findByPk(id);
+
+    if (!customer) {
+      return false;
+    }
+
+    await customer.update({ deletedAt: new Date() });
+
+    await Vehicle.update(
+      { status: 'in stock', assignedDate: null },
+      { where: { customer_id: id } }
+    );
+
+    return true;
   }
 }
 

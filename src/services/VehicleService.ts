@@ -162,6 +162,7 @@ class VehicleService {
       await vehicle.update(
         {
           customer_id: customer.id,
+          assignedDate: new Date(), 
           status: 'sold',
         },
         { transaction: t }

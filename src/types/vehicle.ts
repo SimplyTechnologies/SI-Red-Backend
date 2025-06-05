@@ -30,6 +30,7 @@ export interface VehicleInput {
   customer_id?: string;
   status?: string;
   location: string;
+  assignedDate?: Date | null; 
 }
 
 export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
@@ -39,6 +40,7 @@ export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
   location: string;
   model?: ModelInfo;
   isFavorite?: boolean;
+  assignedDate?: Date | null;
   createdAt?: Date;
 }
 
@@ -56,6 +58,7 @@ export interface VehicleAttributes {
   zipcode: string;
   status: string;
   location: string;
+  assignedDate?: Date | null; 
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;
@@ -63,7 +66,7 @@ export interface VehicleAttributes {
 
 export type VehicleCreationAttributes = Optional<
   VehicleAttributes,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'customer_id'
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'customer_id' | 'assignedDate'
 >;
 
 export type VehicleMapPoint = {
