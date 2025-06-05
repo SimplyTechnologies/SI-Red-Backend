@@ -7,7 +7,7 @@ export class Customer extends Model<CustomerAttributes, CustomerCreationAttribut
   public email!: string;
   public firstName!: string;
   public lastName!: string;
-  public phone!: string;
+  public phoneNumber!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -33,7 +33,7 @@ Customer.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    phone: {
+    phoneNumber: {
       type: DataTypes.STRING,
       allowNull: false,
     },
