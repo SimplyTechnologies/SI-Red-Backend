@@ -1,6 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db';
 import { UserAttributes, UserRole } from '../types/user';
+import { USER_ROLE } from '../constants/constants';
 
 export type UserCreationAttributes = Optional<UserAttributes, 'id' | 'isVerified' | 'firstName' | 'lastName' | 'phoneNumber'>;
 
@@ -36,8 +37,8 @@ User.init(
       allowNull: false,
     },
     role: {
-      type: DataTypes.ENUM('SUPER_ADMIN', 'USER'),
-      defaultValue: 'USER',
+      type: DataTypes.ENUM(USER_ROLE.SUPER_ADMIN, USER_ROLE.USER),
+      defaultValue: USER_ROLE.USER,
       allowNull: false,
     },
     isVerified: {

@@ -44,6 +44,7 @@ app.post(
   }
 );
 
+
 app.post(
   '/vehicles',
   vehicleValidationRules,
@@ -75,10 +76,6 @@ app.get('/swagger.json', (_req, res) => {
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello TypeScript with Express!');
-});
-
-app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
-  res.json({ message: 'You are authenticated', user: req.user });
 });
 
 app.use(errorHandler);
