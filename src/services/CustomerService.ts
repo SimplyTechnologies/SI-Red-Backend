@@ -1,20 +1,55 @@
 import { Customer } from '../models/Customer.model';
-import { Op, Transaction } from 'sequelize';
-import { CreateOrUpdateCustomerRequest } from '../types/customer';
+import { Op, Transaction, Sequelize } from 'sequelize';
+import { CreateOrUpdateCustomerRequest, CustomerResponse } from '../types/customer';
 
 class CustomerService {
-  async getAllCustomers(): Promise<Customer[]> {
-    return await Customer.findAll();
+  async getAllCustomers({
+    page,
+    limit,
+    search,
+  }: { page: number; limit: number; search?: string }): Promise<{ total: number; customers: CustomerResponse[] }> {
+    const offset = (page - 1) * limit;
+
+    const whereClause: Record<string, unknown> = {
+      ...(search && {
+        [Op.or]: [
+          Sequelize.where(
+            Sequelize.fn('concat', Sequelize.col('firstName'), ' ', Sequelize.col('lastName')),
+            {
+              [Op.iLike]: `%${search.trim()}%`,
+            }
+          ),
+          { email: { [Op.iLike]: `%${search.trim()}%` } },
+          { phone: { [Op.iLike]: `%${search.trim()}%` } },
+        ],
+      }),
+    };
+
+    const { count, rows } = await Customer.findAndCountAll({
+      where: whereClause,
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
+
+    const customers: CustomerResponse[] = rows.map((customer: Customer) => customer.get({ plain: true }));
+
+    return {
+      total: count,
+      customers,
+    };
   }
 
-  async suggestCustomers(email: string): Promise<Customer[]> {
-    return await Customer.findAll({
+  async suggestCustomers(email: string): Promise<CustomerResponse[]> {
+    const customers = await Customer.findAll({
       where: {
         email: {
-          [Op.like]: `%${email}%`,
+          [Op.iLike]: `%${email}%`,
         },
       },
     });
+
+    return customers.map((customer: Customer) => customer.get({ plain: true }));
   }
 
   async createOrUpdateCustomer(
