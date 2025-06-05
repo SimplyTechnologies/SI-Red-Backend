@@ -10,5 +10,10 @@ export const USER_ROLE = {
   USER: 'USER',
 } as const;
 
+export const CUSTOMERS_SEARCH = {
+  PAGE_NUMBER: 1,
+  LIMIT: 5,
+} as const;
+
 export const PAGE = 1;
 export const LIMIT = 10;

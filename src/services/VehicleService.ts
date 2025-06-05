@@ -162,7 +162,7 @@ class VehicleService {
       await vehicle.update(
         {
           customer_id: customer.id,
-          assignedDate: new Date(), // Set assignedDate to the current date
+          assignedDate: new Date(), 
           status: 'sold',
         },
         { transaction: t }

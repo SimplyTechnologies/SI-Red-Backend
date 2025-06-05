@@ -1,6 +1,7 @@
 import { Controller, Get, Route, Tags, Query, Delete, Path } from 'tsoa';
 import CustomerService from '../services/CustomerService';
 import { CustomerResponse } from '../types/customer';
+import { CUSTOMERS_SEARCH } from '../constants/constants';
 
 @Route('customers')
 @Tags('Customer')
@@ -23,8 +24,8 @@ export class CustomerController extends Controller {
 
   @Get('/')
   public async getAllCustomers(
-    @Query() page: number = 1,
-    @Query() limit: number = 10,
+    @Query() page: number = CUSTOMERS_SEARCH.PAGE_NUMBER,
+    @Query() limit: number = CUSTOMERS_SEARCH.LIMIT,
     @Query() search?: string
   ): Promise<{ total: number; customers: CustomerResponse[] }> {
     const { total, customers } = await CustomerService.getAllCustomers({ page, limit, search });
