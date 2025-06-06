@@ -40,6 +40,7 @@ export interface SignInResponse {
   message: string;
   accessToken: string;
   refreshToken: string;
+  role: string;
 }
 
 export interface RefreshRequest {

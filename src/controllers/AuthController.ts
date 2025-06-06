@@ -8,12 +8,14 @@ export class AuthController extends Controller {
   @SuccessResponse('200', 'Signed in')
   @Post('/signin')
   public async signIn(@Body() body: SignInRequest): Promise<SignInResponse> {
-    const { accessToken, refreshToken } = await new AuthService().signIn(
+    const { accessToken, refreshToken, user } = await new AuthService().signIn(
       body.email,
       body.password,
       body.rememberMe
     );
+    
+  
 
-    return { message: 'Sign in successful', accessToken, refreshToken };
+    return { message: 'Sign in successful', accessToken, refreshToken, role: user.role };
   }
 }
