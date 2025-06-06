@@ -1,5 +1,5 @@
 import { GetVehiclesOptions, VehicleInput, VehicleResponse } from '../types/vehicle';
-import { Vehicle, Model, Make } from '../models';
+import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize } from 'sequelize';
 import CustomerService from './CustomerService';
@@ -116,6 +116,11 @@ class VehicleService {
             },
           ],
         },
+        {
+          model: Customer,
+          as: 'customer',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phoneNumber'],
+        },
       ],
     });
   }
@@ -162,7 +167,7 @@ class VehicleService {
       await vehicle.update(
         {
           customer_id: customer.id,
-          assignedDate: new Date(), 
+          assignedDate: new Date(),
           status: 'sold',
         },
         { transaction: t }

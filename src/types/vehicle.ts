@@ -1,4 +1,5 @@
 import { Optional } from 'sequelize';
+import { CustomerResponse } from './customer';
 
 export interface MakeInfo {
   id: number;
@@ -36,6 +37,7 @@ export interface VehicleInput {
 export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
   id: string;
   customer_id?: string | null;
+  customer?: CustomerResponse;
   status: string;
   location: string;
   model?: ModelInfo;
