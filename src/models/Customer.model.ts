@@ -2,7 +2,10 @@ import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../config/db';
 import { CustomerAttributes, CustomerCreationAttributes } from '../types/customer';
 
-export class Customer extends Model<CustomerAttributes, CustomerCreationAttributes> implements CustomerAttributes {
+export class Customer
+  extends Model<CustomerAttributes, CustomerCreationAttributes>
+  implements CustomerAttributes
+{
   public id!: string;
   public email!: string;
   public firstName!: string;
@@ -10,6 +13,7 @@ export class Customer extends Model<CustomerAttributes, CustomerCreationAttribut
   public phoneNumber!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public readonly deletedAt!: Date;
 }
 
 Customer.init(
@@ -47,11 +51,16 @@ Customer.init(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     modelName: 'Customer',
     tableName: 'customers',
     timestamps: true,
+    paranoid: true,
   }
 );

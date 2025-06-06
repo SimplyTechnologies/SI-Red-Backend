@@ -30,12 +30,12 @@ export interface VehicleInput {
   customer_id?: string;
   status?: string;
   location: string;
-  assignedDate?: Date | null; 
+  assignedDate?: Date | null;
 }
 
 export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
   id: string;
-  customer_id?: string;
+  customer_id?: string | null;
   status: string;
   location: string;
   model?: ModelInfo;
@@ -49,7 +49,7 @@ export interface VehicleAttributes {
   model_id: number;
   user_id: string;
   year: string;
-  customer_id?: string;
+  customer_id?: string | null;
   vin: string;
   street: string;
   city: string;
@@ -58,7 +58,7 @@ export interface VehicleAttributes {
   zipcode: string;
   status: string;
   location: string;
-  assignedDate?: Date | null; 
+  assignedDate?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;

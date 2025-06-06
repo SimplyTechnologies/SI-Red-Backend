@@ -2,7 +2,10 @@ import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../config/db';
 import { VehicleAttributes, VehicleCreationAttributes } from '../types/vehicle';
 
-export class Vehicle extends Model<VehicleAttributes, VehicleCreationAttributes> implements VehicleAttributes {
+export class Vehicle
+  extends Model<VehicleAttributes, VehicleCreationAttributes>
+  implements VehicleAttributes
+{
   public id!: string;
   public model_id!: number;
   public user_id!: string;
@@ -16,7 +19,7 @@ export class Vehicle extends Model<VehicleAttributes, VehicleCreationAttributes>
   public zipcode!: string;
   public status!: string;
   public location!: string;
-  public assignedDate!: Date | undefined; 
+  public assignedDate!: Date | undefined;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -93,7 +96,7 @@ Vehicle.init(
       allowNull: false,
       defaultValue: '',
     },
-    assignedDate: { 
+    assignedDate: {
       type: DataTypes.DATE,
       allowNull: true,
     },
@@ -102,7 +105,7 @@ Vehicle.init(
     sequelize,
     modelName: 'Vehicle',
     tableName: 'vehicles',
-    paranoid: true, 
+    paranoid: true,
     timestamps: true,
   }
 );
