@@ -95,15 +95,16 @@ class CustomerService {
 
   async deleteCustomer(id: string): Promise<boolean> {
     const customer = await Customer.findByPk(id);
+    if (!customer) return false;
 
-    if (!customer) {
-      return false;
-    }
-
-    await customer.update({ deletedAt: new Date() });
+    await customer.destroy();
 
     await Vehicle.update(
-      { status: 'in stock', assignedDate: null },
+      {
+        status: 'in stock',
+        assignedDate: null,
+        customer_id: null,
+      },
       { where: { customer_id: id } }
     );
 

@@ -3,7 +3,7 @@ import { QueryInterface, DataTypes } from 'sequelize';
 export async function up(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.addColumn('vehicles', 'assignedDate', {
     type: DataTypes.DATE,
-    allowNull: true, 
+    allowNull: true,
   });
 }
 
