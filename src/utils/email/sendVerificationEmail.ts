@@ -14,7 +14,7 @@ export const sendVerificationEmail = async (
     expiresIn: JWT_TOKEN_EXPIRATION.VERIFICATION_TOKEN_EXPIRATION || '1d',
   });
 
-  const verificationLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+  const verificationLink = `${process.env.FRONTEND_URL}/users/verify?token=${token}`;
 
   const mailOptions = {
     from: '"Dealer Desk" <no-reply@dealerdesk.com',
