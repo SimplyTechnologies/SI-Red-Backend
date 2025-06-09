@@ -137,8 +137,20 @@ export class UserService {
     email: string;
     password: string;
     confirmPassword: string;
+    token: string;
   }): Promise<{ message: string }> {
-    const { name, email, password, confirmPassword } = data;
+    const { name, email, password, confirmPassword, token } = data;
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as { userId: string, email: string };
+    } catch {
+      throw new createError.Unauthorized('Invalid or expired activation token');
+    }
+
+    if (decoded.email !== email) {
+      throw new createError.Unauthorized('Activation token does not match email');
+    }
 
     const user = await this.getUserByEmail(email);
 

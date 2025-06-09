@@ -106,30 +106,41 @@ export class UserController extends Controller {
     }
   }
 
-  @Post('/activate')
-  @Middlewares([validateActivateUser, validateRequest])
-  public async activateAccount(
-    @Body() body: { name: string; email: string; password: string; confirmPassword: string }
-  ): Promise<{ message: string; redirectUrl: string }> {
-    const { name, email, password } = body;
+ @Post('/activate')
+@Middlewares([validateActivateUser, validateRequest])
+public async activateAccount(
+  @Body() body: { name: string; email: string; password: string; confirmPassword: string; token: string }
+): Promise<{ message: string; redirectUrl: string }> {
+  const { name, email, password, token } = body;
 
-    const user = await this.userService.getUserByEmail(email);
-
-    if (!user) {
-      throw new createError.NotFound('User not found.');
-    }
-
-    if (user.isVerified) {
-      throw new createError.Conflict('An account with this email already exists.');
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    await user.update({
-      firstName: name,
-      passwordHash,
-      isVerified: true,
-    });
-
-    return { message: 'Account activated successfully.', redirectUrl: '/auth/signin' };
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as { userId: string, email: string };
+  } catch {
+    throw new createError.Unauthorized('Invalid or expired activation token');
   }
+
+  if (decoded.email !== email) {
+    throw new createError.Unauthorized('Activation token does not match email');
+  }
+
+  const user = await this.userService.getUserByEmail(email);
+
+  if (!user) {
+    throw new createError.NotFound('User not found.');
+  }
+
+  if (user.isVerified) {
+    throw new createError.Conflict('An account with this email already exists.');
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await user.update({
+    firstName: name,
+    passwordHash,
+    isVerified: true,
+  });
+
+  return { message: 'Account activated successfully.', redirectUrl: '/auth/signin' };
+ }
 }

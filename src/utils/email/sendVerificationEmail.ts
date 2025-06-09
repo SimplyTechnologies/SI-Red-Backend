@@ -10,14 +10,19 @@ export const sendVerificationEmail = async (
   userId: string,
   firstName: string
 ) => {
-  const token = jwt.sign({ userId }, process.env.VERIFICATION_TOKEN_SECRET!, {
-    expiresIn: JWT_TOKEN_EXPIRATION.VERIFICATION_TOKEN_EXPIRATION || '1d',
-  });
 
-  const verificationLink = `${process.env.FRONTEND_URL}/users/verify?token=${token}`;
+  const token = jwt.sign(
+    { userId, email: userEmail },
+    process.env.VERIFICATION_TOKEN_SECRET!,
+    {
+      expiresIn: JWT_TOKEN_EXPIRATION.VERIFICATION_TOKEN_EXPIRATION || '1d',
+    }
+  );
+
+  const verificationLink = `${process.env.FRONTEND_URL}/activate?token=${token}`;
 
   const mailOptions = {
-    from: '"Dealer Desk" <no-reply@dealerdesk.com',
+    from: '"Dealer Desk" <no-reply@dealerdesk.com>',
     to: userEmail,
     subject: 'You’ve Been Invited – Activate Your Account',
     html: `

@@ -32,4 +32,8 @@ export const validateActivateUser = [
     .withMessage('Confirm Password is required.')
     .custom((value, { req }) => value === req.body.password)
     .withMessage('Passwords do not match.'),
+
+  body('token')
+    .notEmpty()
+    .withMessage('Activation token is required.'),
 ];
