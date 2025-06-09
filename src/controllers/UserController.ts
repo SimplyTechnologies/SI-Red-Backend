@@ -75,9 +75,9 @@ export class UserController extends Controller {
     return await this.userService.deleteUser(id);
   }
 
-  @Patch('/me')
+  @Patch('/')
   @Middlewares([validateUpdateUser, validateRequest])
-  public async updateMe(
+  public async updateUser(
     @Request() req: AuthenticatedRequest,
     @Body() body: UpdateUserDTO
   ): Promise<UpdateUserResponse> {
