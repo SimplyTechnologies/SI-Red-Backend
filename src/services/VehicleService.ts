@@ -64,7 +64,6 @@ class VehicleService {
       ],
       limit,
       offset,
-      order: [['createdAt', 'DESC']], 
     });
 
     return vehicles.map((vehicle): VehicleResponse => {
