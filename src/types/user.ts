@@ -56,3 +56,14 @@ export interface GetUsersOptions {
   limit?: number;
   search?: string;
 }
+
+export interface UpdateUserDTO {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+}
+
+export type UpdateUserResponse = Pick<
+  UserAttributes,
+  'firstName' | 'lastName' | 'phoneNumber' | 'email'
+>;

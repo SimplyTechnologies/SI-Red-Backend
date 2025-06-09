@@ -15,7 +15,7 @@ import {
   Patch,
 } from 'tsoa';
 import { UserService } from '../services/UserService';
-import { UserResponse } from '../types/user';
+import { UpdateUserDTO, UpdateUserResponse, UserResponse } from '../types/user';
 import { CreateUserDTO } from '../types/user';
 import { USER_ROLE } from '../constants/constants';
 import createError from 'http-errors';
@@ -23,6 +23,7 @@ import { LIMIT, PAGE } from '../constants/constants';
 import { UserAttributes } from '../types/user';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
+import { validateUpdateUser } from '../validations/updateUser.validation';
 import { validateCreateUser } from '../validations/addUser.validation';
 import { validateActivateUser } from '../validations/activateUser.validation';
 import { validateRequest } from '../middlewares/validateRequest';
@@ -143,4 +144,16 @@ public async activateAccount(
 
   return { message: 'Account activated successfully.', redirectUrl: '/auth/signin' };
  }
+
+
+@Patch('/')
+  @Middlewares([validateUpdateUser, validateRequest])
+  public async updateUser(
+    @Request() req: AuthenticatedRequest,
+    @Body() body: UpdateUserDTO
+  ): Promise<UpdateUserResponse> {
+    const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
+    const updatedUser = await this.userService.updateUser(userId, body);
+    return updatedUser;
+  }
 }
