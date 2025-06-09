@@ -7,7 +7,6 @@ import {
   SuccessResponse,
   Request,
   Get,
-  Patch,
   Query,
   Delete,
   Path,
@@ -15,7 +14,7 @@ import {
   Middlewares,
 } from 'tsoa';
 import { UserService } from '../services/UserService';
-import { UpdateUserDTO, UpdateUserResponse, UserResponse } from '../types/user';
+import { UserResponse } from '../types/user';
 import { CreateUserDTO } from '../types/user';
 import { USER_ROLE } from '../constants/constants';
 import createError from 'http-errors';
@@ -24,12 +23,13 @@ import { UserAttributes } from '../types/user';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { validateCreateUser } from '../validations/addUser.validation';
+import { validateActivateUser } from '../validations/activateUser.validation';
 import { validateRequest } from '../middlewares/validateRequest';
-import { validateUpdateUser } from '../validations/updateUser.validation';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 
 @Route('users')
 @Tags('User')
-@Security('bearerAuth')
 export class UserController extends Controller {
   private userService = new UserService();
 
@@ -47,7 +47,9 @@ export class UserController extends Controller {
     const createdUser = await this.userService.createUser(body);
     return createdUser;
   }
+
   @Get('/')
+  @Security('bearerAuth') 
   public async getUsers(
     @Request() req: AuthenticatedRequest,
     @Query() page: number = PAGE,
@@ -59,7 +61,7 @@ export class UserController extends Controller {
   }
 
   @Delete('{id}')
-  @Security('bearerAuth')
+  @Security('bearerAuth') 
   public async deleteUser(
     @Request() req: AuthenticatedRequest,
     @Path() id: string
@@ -75,14 +77,70 @@ export class UserController extends Controller {
     return await this.userService.deleteUser(id);
   }
 
-  @Patch('/')
-  @Middlewares([validateUpdateUser, validateRequest])
-  public async updateUser(
-    @Request() req: AuthenticatedRequest,
-    @Body() body: UpdateUserDTO
-  ): Promise<UpdateUserResponse> {
-    const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
-    const updatedUser = await this.userService.updateUser(userId, body);
-    return updatedUser;
+  @Get('/verify')
+  public async verifyToken(@Query() token?: string): Promise<{ name: string; email: string }> {
+    try {
+      console.log('Received token:', token);
+
+      if (!token) {
+        throw new createError.BadRequest('No token provided');
+      }
+
+      const decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as { userId: string };
+      const userId = decoded.userId;
+
+      const user = await this.userService.getUserById(userId);
+
+      if (!user) {
+        throw new createError.NotFound('User not found');
+      }
+
+      if (user.firstName === null) {
+        throw new createError.BadRequest('User first name cannot be null');
+      }
+
+      return { name: user.firstName, email: user.email };
+    } catch (error) {
+      console.error('Token verification error:', error); 
+      throw new createError.Unauthorized('Invalid or expired token');
+    }
   }
+
+ @Post('/activate')
+@Middlewares([validateActivateUser, validateRequest])
+public async activateAccount(
+  @Body() body: { name: string; email: string; password: string; confirmPassword: string; token: string }
+): Promise<{ message: string; redirectUrl: string }> {
+  const { name, email, password, token } = body;
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as { userId: string, email: string };
+  } catch {
+    throw new createError.Unauthorized('Invalid or expired activation token');
+  }
+
+  if (decoded.email !== email) {
+    throw new createError.Unauthorized('Activation token does not match email');
+  }
+
+  const user = await this.userService.getUserByEmail(email);
+
+  if (!user) {
+    throw new createError.NotFound('User not found.');
+  }
+
+  if (user.isVerified) {
+    throw new createError.Conflict('An account with this email already exists.');
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await user.update({
+    firstName: name,
+    passwordHash,
+    isVerified: true,
+  });
+
+  return { message: 'Account activated successfully.', redirectUrl: '/auth/signin' };
+ }
 }
