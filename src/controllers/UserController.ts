@@ -12,6 +12,7 @@ import {
   Path,
   Security,
   Middlewares,
+  Patch,
 } from 'tsoa';
 import { UserService } from '../services/UserService';
 import { UserResponse } from '../types/user';
@@ -80,7 +81,6 @@ export class UserController extends Controller {
   @Get('/verify')
   public async verifyToken(@Query() token?: string): Promise<{ name: string; email: string }> {
     try {
-      console.log('Received token:', token);
 
       if (!token) {
         throw new createError.BadRequest('No token provided');
@@ -106,7 +106,7 @@ export class UserController extends Controller {
     }
   }
 
- @Post('/activate')
+ @Patch('/activate')
 @Middlewares([validateActivateUser, validateRequest])
 public async activateAccount(
   @Body() body: { name: string; email: string; password: string; confirmPassword: string; token: string }
