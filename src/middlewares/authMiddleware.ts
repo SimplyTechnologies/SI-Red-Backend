@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const publicPaths = ['/auth/signin', '/docs', '/swagger.json'];
+const publicPaths = ['/auth/signin', '/auth/refresh', '/docs', '/swagger.json'];
 
 const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const isPublic = req.path === '/' || publicPaths.some((path) => req.path.startsWith(path));

@@ -22,6 +22,7 @@ export class AuthController extends Controller {
       firstName: user.firstName ?? '',
       lastName: user.lastName ?? '',
       phoneNumber: user.phoneNumber ?? '',
+      role: user.role,
     };
   }
 }

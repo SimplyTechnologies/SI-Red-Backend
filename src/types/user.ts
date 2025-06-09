@@ -44,6 +44,7 @@ export interface SignInResponse {
   firstName: string;
   lastName: string;
   phoneNumber: string;
+  role: string;
 }
 
 export interface RefreshRequest {
