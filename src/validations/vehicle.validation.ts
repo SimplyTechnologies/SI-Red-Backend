@@ -36,6 +36,9 @@ export const vehicleValidationRules = [
   body('year').trim().notEmpty().withMessage('Vehicle Year is required.'),
 
   body('zipcode')
-    .isLength({ min: 4, max: 4 })
-    .withMessage('Zipcode must be exactly 4 characters long'),
+    .trim()
+    .notEmpty()
+    .withMessage('Zip Code is required.')
+    .isPostalCode('any')
+    .withMessage('Invalid postal code'),
 ];
