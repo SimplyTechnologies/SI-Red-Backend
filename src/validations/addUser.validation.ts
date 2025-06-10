@@ -2,25 +2,39 @@ import { body } from 'express-validator';
 
 export const validateCreateUser = [
   body('email')
-    .isEmail()
-    .withMessage('A valid email is required')
     .notEmpty()
-    .withMessage('Email is required.'),
+    .withMessage('Enter the email address.')
+    .bail()
+    .isEmail()
+    .withMessage('Enter a valid email address.')
+    .bail()
+    .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+    .withMessage('Enter a valid email address.'),
 
   body('firstName')
-    .isString()
     .notEmpty()
-    .withMessage('First name is required.'),
+    .withMessage('Enter the first name.')
+    .bail()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Enter a valid First name.')
+    .bail()
+    .matches(/^[A-Za-zÀ-ÿ\u00C0-\u017F' -]+$/)
+    .withMessage('Enter a valid First name.'),
 
   body('lastName')
-    .isString()
     .notEmpty()
-    .withMessage('Last name is required.'),
+    .withMessage('Enter the last name.')
+    .bail()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Enter a valid Last name.')
+    .bail()
+    .matches(/^[A-Za-zÀ-ÿ\u00C0-\u017F' -]+$/)
+    .withMessage('Enter a valid Last name.'),
 
   body('phoneNumber')
     .notEmpty()
     .withMessage('Phone Number is required')
     .bail()
-    .matches(/^\+?[1-9]\d{1,14}$/)
-    .withMessage('Enter a valid phone number'),
+    .matches(/^\+\d{8,15}$/)
+    .withMessage('Phone number must start with "+" and contain 8 to 15 digits only.'),
 ];
