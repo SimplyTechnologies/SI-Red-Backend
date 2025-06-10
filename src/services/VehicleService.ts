@@ -140,7 +140,7 @@ class VehicleService {
             {
               model: Make,
               as: 'make',
-              attributes: ['name'],
+              attributes: ['name', 'id'],
             },
           ],
         },

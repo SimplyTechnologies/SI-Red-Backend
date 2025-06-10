@@ -11,6 +11,7 @@ import {
   SuccessResponse,
   Request,
   Query,
+  Patch,
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
 import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
@@ -63,7 +64,7 @@ export class VehicleController extends Controller {
     return vehicle.get({ plain: true });
   }
 
-  @Put('/{id}')
+  @Patch('/{id}')
   public async updateVehicle(
     @Path() id: string,
     @Body() updateData: Partial<VehicleInput>
