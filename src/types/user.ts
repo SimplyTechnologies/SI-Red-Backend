@@ -40,6 +40,11 @@ export interface SignInResponse {
   message: string;
   accessToken: string;
   refreshToken: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  role: string;
 }
 
 export interface RefreshRequest {

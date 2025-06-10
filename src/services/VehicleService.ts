@@ -1,11 +1,12 @@
 import { GetVehiclesOptions, VehicleInput, VehicleResponse } from '../types/vehicle';
 import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
-import { Op, Sequelize } from 'sequelize';
+import { Op, Sequelize, UniqueConstraintError } from 'sequelize';
 import CustomerService from './CustomerService';
 import createError from 'http-errors';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
 import { sequelize } from '../config/db';
+import createHttpError from 'http-errors';
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -28,13 +29,39 @@ class VehicleService {
   }
 
   async createVehicle(data: VehicleInput, userId: string) {
-    const vehicleData = {
-      ...data,
-      user_id: userId,
-      status: data.status ?? 'in stock',
-    };
+    try {
+      const vehicleData = {
+        ...data,
+        user_id: userId,
+        status: data.status ?? 'in stock',
+      };
 
-    return await Vehicle.create(vehicleData);
+      const model = await Model.findByPk(data.model_id, {
+        include: [{ model: Make, as: 'make' }],
+      });
+
+      if (!model) {
+        throw new createHttpError.BadRequest('Model not found.');
+      }
+
+      const modelMake = await Make.findByPk(model.make_id);
+      if (!modelMake) {
+        throw new createHttpError.BadRequest('Make for model not found.');
+      }
+
+      if (typeof data.make_id === 'number' && model.make_id !== data.make_id) {
+        throw new createHttpError.Conflict('Selected model does not belong to the specified make.');
+      }
+
+      return await Vehicle.create(vehicleData);
+    } catch (err) {
+      if (err instanceof UniqueConstraintError) {
+        throw new createHttpError.Conflict('VIN already exists.');
+      }
+
+      console.error(err);
+      throw err;
+    }
   }
 
   async getAllVehicles({ userId, page, limit, search }: GetVehiclesOptions) {
@@ -64,6 +91,7 @@ class VehicleService {
       ],
       limit,
       offset,
+      order: [['createdAt', 'DESC']],
     });
 
     return vehicles.map((vehicle): VehicleResponse => {

@@ -113,7 +113,9 @@ export class UserService {
 
   public async verifyUser(token: string): Promise<{ name: string; email: string }> {
     try {
-      const decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as { userId: string };
+      const decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as {
+        userId: string;
+      };
       const userId = decoded.userId;
 
       const user = await this.getUserById(userId);
@@ -143,7 +145,10 @@ export class UserService {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as { userId: string, email: string };
+      decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as {
+        userId: string;
+        email: string;
+      };
     } catch {
       throw new createError.Unauthorized('Invalid or expired activation token');
     }

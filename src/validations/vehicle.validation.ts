@@ -1,7 +1,17 @@
 import { body } from 'express-validator';
 
 export const vehicleValidationRules = [
-  body('model_id').isInt().withMessage('model_id must be an integer'),
+  body('make_id')
+    .notEmpty()
+    .withMessage('Make is required')
+    .isInt()
+    .withMessage('make_id must be an integer'),
+
+  body('model_id')
+    .notEmpty()
+    .withMessage('Model is required')
+    .isInt()
+    .withMessage('model_id must be an integer'),
 
   body('year').isString().notEmpty().withMessage('Year is required'),
 
@@ -26,6 +36,9 @@ export const vehicleValidationRules = [
   body('year').trim().notEmpty().withMessage('Vehicle Year is required.'),
 
   body('zipcode')
-    .isLength({ min: 4, max: 4 })
-    .withMessage('Zipcode must be exactly 4 characters long'),
+    .trim()
+    .notEmpty()
+    .withMessage('Zip Code is required.')
+    .isPostalCode('any')
+    .withMessage('Invalid postal code'),
 ];

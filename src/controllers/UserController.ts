@@ -51,7 +51,7 @@ export class UserController extends Controller {
   }
 
   @Get('/')
-  @Security('bearerAuth') 
+  @Security('bearerAuth')
   public async getUsers(
     @Request() req: AuthenticatedRequest,
     @Query() page: number = PAGE,
@@ -63,7 +63,7 @@ export class UserController extends Controller {
   }
 
   @Delete('{id}')
-  @Security('bearerAuth') 
+  @Security('bearerAuth')
   public async deleteUser(
     @Request() req: AuthenticatedRequest,
     @Path() id: string
@@ -82,12 +82,13 @@ export class UserController extends Controller {
   @Get('/verify')
   public async verifyToken(@Query() token?: string): Promise<{ name: string; email: string }> {
     try {
-
       if (!token) {
         throw new createError.BadRequest('No token provided');
       }
 
-      const decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as { userId: string };
+      const decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as {
+        userId: string;
+      };
       const userId = decoded.userId;
 
       const user = await this.userService.getUserById(userId);
@@ -102,51 +103,60 @@ export class UserController extends Controller {
 
       return { name: user.firstName, email: user.email };
     } catch (error) {
-      console.error('Token verification error:', error); 
+      console.error('Token verification error:', error);
       throw new createError.Unauthorized('Invalid or expired token');
     }
   }
 
- @Patch('/activate')
-@Middlewares([validateActivateUser, validateRequest])
-public async activateAccount(
-  @Body() body: { name: string; email: string; password: string; confirmPassword: string; token: string }
-): Promise<{ message: string; redirectUrl: string }> {
-  const { name, email, password, token } = body;
+  @Patch('/activate')
+  @Middlewares([validateActivateUser, validateRequest])
+  public async activateAccount(
+    @Body()
+    body: {
+      name: string;
+      email: string;
+      password: string;
+      confirmPassword: string;
+      token: string;
+    }
+  ): Promise<{ message: string; redirectUrl: string }> {
+    const { name, email, password, token } = body;
 
-  let decoded;
-  try {
-    decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as { userId: string, email: string };
-  } catch {
-    throw new createError.Unauthorized('Invalid or expired activation token');
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as {
+        userId: string;
+        email: string;
+      };
+    } catch {
+      throw new createError.Unauthorized('Invalid or expired activation token');
+    }
+
+    if (decoded.email !== email) {
+      throw new createError.Unauthorized('Activation token does not match email');
+    }
+
+    const user = await this.userService.getUserByEmail(email);
+
+    if (!user) {
+      throw new createError.NotFound('User not found.');
+    }
+
+    if (user.isVerified) {
+      throw new createError.Conflict('An account with this email already exists.');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    await user.update({
+      firstName: name,
+      passwordHash,
+      isVerified: true,
+    });
+
+    return { message: 'Account activated successfully.', redirectUrl: '/auth/signin' };
   }
 
-  if (decoded.email !== email) {
-    throw new createError.Unauthorized('Activation token does not match email');
-  }
-
-  const user = await this.userService.getUserByEmail(email);
-
-  if (!user) {
-    throw new createError.NotFound('User not found.');
-  }
-
-  if (user.isVerified) {
-    throw new createError.Conflict('An account with this email already exists.');
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  await user.update({
-    firstName: name,
-    passwordHash,
-    isVerified: true,
-  });
-
-  return { message: 'Account activated successfully.', redirectUrl: '/auth/signin' };
- }
-
-
-@Patch('/')
+  @Patch('/')
   @Middlewares([validateUpdateUser, validateRequest])
   public async updateUser(
     @Request() req: AuthenticatedRequest,
