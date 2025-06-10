@@ -13,9 +13,16 @@ export class AuthController extends Controller {
       body.password,
       body.rememberMe
     );
-    
-  
 
-    return { message: 'Sign in successful', accessToken, refreshToken, role: user.role };
+    return {
+      message: 'Sign in successful',
+      accessToken,
+      refreshToken,
+      email: user.email,
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? '',
+      phoneNumber: user.phoneNumber ?? '',
+      role: user.role,
+    };
   }
 }

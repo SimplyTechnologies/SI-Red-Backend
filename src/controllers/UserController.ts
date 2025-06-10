@@ -12,9 +12,9 @@ import {
   Path,
   Security,
   Middlewares,
+  Patch,
 } from 'tsoa';
 import { UserService } from '../services/UserService';
-import { UserResponse } from '../types/user';
 import { CreateUserDTO } from '../types/user';
 import { USER_ROLE } from '../constants/constants';
 import createError from 'http-errors';
@@ -24,6 +24,8 @@ import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { validateCreateUser } from '../validations/addUser.validation';
 import { validateRequest } from '../middlewares/validateRequest';
+import { validateUpdateUser } from '../validations/updateUser.validation';
+import { UpdateUserDTO, UpdateUserResponse, UserResponse } from '../types/user';
 
 @Route('users')
 @Tags('User')
@@ -71,5 +73,16 @@ export class UserController extends Controller {
     }
 
     return await this.userService.deleteUser(id);
+  }
+
+  @Patch('/')
+  @Middlewares([validateUpdateUser, validateRequest])
+  public async updateUser(
+    @Request() req: AuthenticatedRequest,
+    @Body() body: UpdateUserDTO
+  ): Promise<UpdateUserResponse> {
+    const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
+    const updatedUser = await this.userService.updateUser(userId, body);
+    return updatedUser;
   }
 }

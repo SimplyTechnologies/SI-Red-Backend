@@ -1,7 +1,17 @@
 import { body } from 'express-validator';
 
 export const vehicleValidationRules = [
-  body('model_id').isInt().withMessage('model_id must be an integer'),
+  body('make_id')
+    .notEmpty()
+    .withMessage('Make is required')
+    .isInt()
+    .withMessage('make_id must be an integer'),
+
+  body('model_id')
+    .notEmpty()
+    .withMessage('Model is required')
+    .isInt()
+    .withMessage('model_id must be an integer'),
 
   body('year').isString().notEmpty().withMessage('Year is required'),
 

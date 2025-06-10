@@ -21,6 +21,7 @@ export interface GetVehiclesOptions {
 
 export interface VehicleInput {
   model_id: number;
+  make_id?: number;
   year: string;
   vin: string;
   street: string;

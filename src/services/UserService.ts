@@ -1,6 +1,6 @@
 import { User } from '../models/User.model';
 import { sendVerificationEmail } from '../utils/email/sendVerificationEmail';
-import { CreateUserDTO } from '../types/user';
+import { CreateUserDTO, UpdateUserDTO, UpdateUserResponse } from '../types/user';
 import createError from 'http-errors';
 import { Op, Sequelize } from 'sequelize';
 import { GetUsersOptions } from '../types/user';
@@ -80,6 +80,16 @@ export class UserService {
 
     await user.destroy();
     return { message: 'User deleted successfully' };
+  }
+
+  async updateUser(userId: string, updates: UpdateUserDTO): Promise<UpdateUserResponse> {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new createError.NotFound('User not found');
+    }
+    await user.update(updates);
+    const { firstName, lastName, phoneNumber, email } = user;
+    return { firstName, lastName, phoneNumber, email };
   }
 }
 
