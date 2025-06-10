@@ -26,7 +26,9 @@ class CustomerService {
         }
       : undefined;
 
-    const { count, rows } = await Customer.findAndCountAll({
+    const count = await Customer.count({ where: whereClause });
+
+    const rows = await Customer.findAll({
       limit,
       offset,
       order: [['createdAt', 'DESC']],
