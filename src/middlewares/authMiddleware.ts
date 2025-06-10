@@ -1,30 +1,53 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { UserRole } from '../types/user';
+import { AuthenticatedRequest } from '../types/auth';
 
-const publicPaths = ['/auth/signin', '/auth/refresh', '/docs', '/swagger.json'];
+const publicPaths = [
+  '/auth/signin',
+  '/docs',
+  '/swagger.json',
+  '/users/verify',
+  '/users/activate'
+];
+
+const validRoles: UserRole[] = ['SUPER_ADMIN', 'USER'];
 
 const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  const isPublic = req.path === '/' || publicPaths.some((path) => req.path.startsWith(path));
-  if (isPublic) return next();
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ message: 'No token provided' });
-    return;
-  }
-
   try {
+    const isPublic = publicPaths.some((path) => req.path.startsWith(path));
+    if (isPublic) {
+      return next();
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ message: 'No token provided' });
+      return;
+    }
+
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
       userId: string;
       email: string;
       role: string;
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req as any).user = decoded; // temprory solution need to try resolve without any
+
+    if (!validRoles.includes(decoded.role as UserRole)) {
+      res.status(403).json({ message: 'Invalid role' });
+      return;
+    }
+
+    (req as AuthenticatedRequest).user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role as UserRole,
+    };
+
     next();
-  } catch {
-    res.status(401).json({ message: 'Invalid token' });
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
 
