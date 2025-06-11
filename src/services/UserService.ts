@@ -84,9 +84,12 @@ export class UserService {
 
     const userEmail = user.email;
     const userFirstName = user.firstName;
+    const userIsVerified = user.isVerified;
 
     await user.destroy();
-    await sendUserDeletedEmail(userEmail, userFirstName!);
+    if (userIsVerified) {
+      await sendUserDeletedEmail(userEmail, userFirstName!);
+    }
     return { message: 'User deleted successfully' };
   }
 
