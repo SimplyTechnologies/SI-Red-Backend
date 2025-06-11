@@ -5,6 +5,8 @@ import { AuthenticatedRequest } from '../types/auth';
 
 const publicPaths = [
   '/auth/signin',
+  '/auth/forgot-password',
+  '/auth/reset-password',
   '/docs',
   '/swagger.json',
   '/users/verify',

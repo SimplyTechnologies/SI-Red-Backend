@@ -18,8 +18,8 @@ export const validateUpdateUser = [
   body('phoneNumber')
     .optional()
     .notEmpty()
-    .withMessage('Phone number cannot be empty')
+    .withMessage('Phone Number cannot be empty')
     .bail()
     .matches(/^\+?[1-9]\d{7,14}$/)
-    .withMessage('Enter a valid phone number'),
+    .withMessage('Enter a valid Phone Number'),
 ];

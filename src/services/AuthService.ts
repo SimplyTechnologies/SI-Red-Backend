@@ -4,7 +4,9 @@ import { User } from '../models';
 import { config } from 'dotenv';
 import { JWT_TOKEN_EXPIRATION } from '../constants/constants';
 import createHttpError from 'http-errors';
+import { sendResetPasswordEmail } from '../utils/email/sendResetPasswordEmail';
 config();
+
 export class AuthService {
   async signIn(
     email: string,
@@ -39,5 +41,80 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken, user };
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return { message: 'If an account with that email exists, a reset link has been sent.' };
+    }
+
+    if (!user.isVerified) {
+      throw new createHttpError.BadRequest('Account is not verified.');
+    }
+
+    await sendResetPasswordEmail(user.email, user.id, user.firstName ?? 'User');
+
+    return { message: 'If an account with that email exists, a reset link has been sent.' };
+  }
+
+  async resetPassword(data: {
+    token: string;
+    password: string;
+    confirmPassword: string;
+  }): Promise<{ message: string }> {
+    const { token, password, confirmPassword } = data;
+
+    if (password !== confirmPassword) {
+      throw new createHttpError.BadRequest('Passwords do not match');
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.RESET_PASSWORD_TOKEN_SECRET!) as {
+        userId: string;
+        email: string;
+      };
+    } catch {
+      throw new createHttpError.Unauthorized('Invalid or expired reset token');
+    }
+
+    const user = await User.findByPk(decoded.userId);
+    if (!user) {
+      throw new createHttpError.NotFound('User not found');
+    }
+
+    if (!user.isVerified) {
+      throw new createHttpError.BadRequest('Account is not verified');
+    }
+
+    const isSamePassword = await bcrypt.compare(password, user.passwordHash);
+    if (isSamePassword) {
+      throw new createHttpError.BadRequest(
+        'New password must be different from the current password'
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    await user.update({ passwordHash });
+
+    return { message: 'Password has been reset successfully' };
+  }
+
+  async requestPasswordReset(userId: string): Promise<{ message: string }> {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      throw new createHttpError.NotFound('User not found');
+    }
+
+    if (!user.isVerified) {
+      throw new createHttpError.BadRequest('Account is not verified');
+    }
+
+    await sendResetPasswordEmail(user.email, user.id, user.firstName ?? 'User');
+
+    return { message: 'Password reset email has been sent to your email address.' };
   }
 }
