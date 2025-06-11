@@ -2,18 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '../types/user';
 import { AuthenticatedRequest } from '../types/auth';
+import { User } from '../models';
 
-const publicPaths = [
-  '/auth/signin',
-  '/docs',
-  '/swagger.json',
-  '/users/verify',
-  '/users/activate'
-];
+const publicPaths = ['/auth/signin', '/docs', '/swagger.json', '/users/verify', '/users/activate'];
 
 const validRoles: UserRole[] = ['SUPER_ADMIN', 'USER'];
 
-const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const isPublic = publicPaths.some((path) => req.path.startsWith(path));
     if (isPublic) {
@@ -31,10 +26,17 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction): void =
       userId: string;
       email: string;
       role: string;
+      iat: number;
     };
 
-    if (!validRoles.includes(decoded.role as UserRole)) {
-      res.status(403).json({ message: 'Invalid role' });
+    const user = await User.findByPk(decoded.userId);
+    if (!user || !validRoles.includes(decoded.role as UserRole)) {
+      res.status(403).json({ message: 'Invalid user or role' });
+      return;
+    }
+
+    if (user.forceLogoutAt && decoded.iat * 1000 < new Date(user.forceLogoutAt).getTime()) {
+      res.status(401).json({ message: 'Force logout required' });
       return;
     }
 

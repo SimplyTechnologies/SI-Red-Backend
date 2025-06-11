@@ -3,7 +3,10 @@ import { sequelize } from '../config/db';
 import { UserAttributes, UserRole } from '../types/user';
 import { USER_ROLE } from '../constants/constants';
 
-export type UserCreationAttributes = Optional<UserAttributes, 'id' | 'isVerified' | 'firstName' | 'lastName' | 'phoneNumber'>;
+export type UserCreationAttributes = Optional<
+  UserAttributes,
+  'id' | 'isVerified' | 'firstName' | 'lastName' | 'phoneNumber'
+>;
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: string;
@@ -18,6 +21,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public readonly forceLogoutAt!: Date | null;
 }
 
 User.init(
@@ -56,6 +60,11 @@ User.init(
     phoneNumber: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    forceLogoutAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
     },
   },
   {

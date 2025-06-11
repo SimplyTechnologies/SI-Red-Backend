@@ -40,4 +40,7 @@ export class AuthService {
 
     return { accessToken, refreshToken, user };
   }
+  async forceLogoutUser(userId: string): Promise<void> {
+    await User.update({ forceLogoutAt: new Date() }, { where: { id: userId } });
+  }
 }

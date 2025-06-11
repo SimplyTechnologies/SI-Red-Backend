@@ -28,6 +28,7 @@ export interface UserAttributes {
   phoneNumber: string | null;
   createdAt?: Date;
   updatedAt?: Date;
+  forceLogoutAt: Date | null;
 }
 
 export interface SignInRequest {
