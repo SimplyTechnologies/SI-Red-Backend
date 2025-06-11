@@ -89,6 +89,13 @@ export class AuthService {
       throw new createHttpError.BadRequest('Account is not verified');
     }
 
+    const isSamePassword = await bcrypt.compare(password, user.passwordHash);
+    if (isSamePassword) {
+      throw new createHttpError.BadRequest(
+        'New password must be different from the current password'
+      );
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
     await user.update({ passwordHash });
 
