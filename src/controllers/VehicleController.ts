@@ -12,6 +12,7 @@ import {
   Request,
   Query,
   Patch,
+  Security,
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
 import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
@@ -39,6 +40,7 @@ export class VehicleController extends Controller {
   }
 
   @Get('/')
+  @Security('bearerAuth')
   public async getVehicles(
     @Request() req: AuthenticatedRequest,
     @Query() page: number = PAGE,
