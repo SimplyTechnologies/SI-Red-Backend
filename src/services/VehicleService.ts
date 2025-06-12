@@ -63,12 +63,31 @@ class VehicleService {
     }
   }
 
-  async getAllVehicles({ userId, page, limit, search }: GetVehiclesOptions) {
+  async getAllVehicles({
+    userId,
+    page,
+    limit,
+    search,
+    make,
+    model,
+    availability,
+  }: GetVehiclesOptions) {
     const offset = (page - 1) * limit;
 
     const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
 
-    const whereClause = search ? this.getWhereClauseSearch(search) : {};
+    const searchClause = search ? this.getWhereClauseSearch(search) : {};
+
+    if (model?.length && !make) {
+      throw new createHttpError.BadRequest('Make must be selected when filtering by model.');
+    }
+
+    const whereClause = {
+      ...searchClause,
+      ...(availability && {
+        status: { [Op.iLike]: availability },
+      }),
+    };
 
     const vehicles = await Vehicle.findAll({
       where: whereClause,
@@ -76,14 +95,24 @@ class VehicleService {
         {
           model: Model,
           as: 'model',
-          required: !!search,
+          required: !!(search || make || model?.length),
           attributes: ['name'],
+          where: model?.length
+            ? {
+                name: { [Op.in]: model },
+              }
+            : undefined,
           include: [
             {
               model: Make,
               as: 'make',
-              required: false,
+              required: !!make,
               attributes: ['name'],
+              where: make
+                ? {
+                    name: { [Op.iLike]: make },
+                  }
+                : undefined,
             },
           ],
         },
