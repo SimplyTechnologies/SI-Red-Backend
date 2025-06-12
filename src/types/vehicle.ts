@@ -88,4 +88,9 @@ export interface VehicleCSVData {
   availability: string;
 }
 
-
+export interface PlainVehicleLocation {
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}

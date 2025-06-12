@@ -1,4 +1,4 @@
-import { GetVehiclesOptions, VehicleInput, VehicleResponse, VehicleCSVData } from '../types/vehicle';
+import { GetVehiclesOptions, VehicleInput, VehicleResponse, VehicleCSVData, PlainVehicleLocation } from '../types/vehicle';
 import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize, UniqueConstraintError } from 'sequelize';
@@ -8,12 +8,7 @@ import { CreateOrUpdateCustomerRequest } from '../types/customer';
 import { sequelize } from '../config/db';
 import createHttpError from 'http-errors';
 
-interface PlainVehicleLocation {
-  street?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-}
+
 class VehicleService {
   getWhereClauseSearch(search?: string) {
     return {
