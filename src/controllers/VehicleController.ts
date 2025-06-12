@@ -12,6 +12,9 @@ import {
   Request,
   Query,
 } from 'tsoa';
+import { stringify } from 'csv-stringify';
+import { Options as StringifyOptions } from 'csv-stringify/sync';
+import { Readable } from 'stream';
 import VehicleService from '../services/VehicleService';
 import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
 import { AuthenticatedRequest } from '../types/auth';
@@ -46,6 +49,57 @@ export class VehicleController extends Controller {
   ): Promise<VehicleResponse[]> {
     const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
     return await VehicleService.getAllVehicles({ userId, page, limit, search });
+  }
+
+  @Get('/download-csv')
+  public async downloadCSV(
+    @Request() req: AuthenticatedRequest,
+    @Query() search?: string,
+    @Query() type?: 'vehicles' | 'favorites'
+  ): Promise<NodeJS.ReadableStream> {
+    try {
+      const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
+      
+      // Get vehicles based on type
+      const vehicles = type === 'favorites'
+        ? await VehicleService.getVehiclesForCSV(search, userId, true)
+        : await VehicleService.getVehiclesForCSV(search);
+
+      const date = new Date().toISOString().split('T')[0];
+      const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
+      const filename = `${prefix}_${date}.csv`;
+
+      this.setHeader('Content-Type', 'text/csv; charset=UTF-8');
+      this.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      this.setHeader('Cache-Control', 'no-cache');
+      this.setStatus(200);
+
+      const options: StringifyOptions = {
+        header: true,
+        columns: [
+          { key: 'make', header: 'Make' },
+          { key: 'model', header: 'Model' },
+          { key: 'vin', header: 'VIN' },
+          { key: 'year', header: 'Year' },
+          { key: 'combinedLocation', header: 'Combined Location' },
+          { key: 'location', header: 'Coordinates' },
+          { key: 'availability', header: 'Availability' }
+        ],
+        cast: {
+          string: (value: unknown): string => 
+            typeof value === 'string' ? value.replace(/"/g, '""') : String(value)
+        },
+        quoted: true,
+        quoted_empty: true,
+        record_delimiter: '\n'
+      };
+
+      return Readable.from(vehicles).pipe(stringify(options));
+    } catch (error) {
+      console.error('Error generating CSV:', error);
+      this.setStatus(500);
+      throw new Error('Failed to generate CSV file');
+    }
   }
 
   @Get('/map-points')
@@ -88,5 +142,12 @@ export class VehicleController extends Controller {
   @Delete('/{id}')
   public async deleteVehicle(@Path() id: string): Promise<{ message: string }> {
     return await VehicleService.deleteVehicle(id);
+  }
+
+  private escapeCsvValue(value: string): string {
+    if (!value) return '""';
+    const needsQuoting = value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r');
+    if (!needsQuoting) return value;
+    return `"${value.replace(/"/g, '""')}"`;
   }
 }
