@@ -3,7 +3,6 @@ import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize, UniqueConstraintError } from 'sequelize';
 import CustomerService from './CustomerService';
-import createError from 'http-errors';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
 import { sequelize } from '../config/db';
 import createHttpError from 'http-errors';
@@ -56,7 +55,7 @@ class VehicleService {
       return await Vehicle.create(vehicleData);
     } catch (err) {
       if (err instanceof UniqueConstraintError) {
-        throw new createHttpError.Conflict('VIN already exists.');
+        throw new createHttpError.BadRequest('VIN already exists.');
       }
 
       console.error(err);
@@ -193,11 +192,41 @@ class VehicleService {
 
   async updateVehicle(id: string, updateData: Partial<VehicleInput>) {
     const vehicle = await Vehicle.findByPk(id);
+
     if (!vehicle) {
-      throw new Error('Vehicle not found');
+      throw new createHttpError.NotFound('Vehicle not found.');
     }
-    await vehicle.update(updateData);
-    return vehicle;
+
+    try {
+      const vehicleData = {
+        ...updateData,
+        id,
+        status: updateData.status ?? 'in stock',
+      };
+
+      const model = await Model.findByPk(updateData.model_id, {
+        include: [{ model: Make, as: 'make' }],
+      });
+
+      if (!model) {
+        throw new createHttpError.BadRequest('Model not found.');
+      }
+
+      const modelMake = await Make.findByPk(model.make_id);
+      if (!modelMake) {
+        throw new createHttpError.BadRequest('Make for model not found.');
+      }
+
+      if (typeof updateData.make_id === 'number' && model.make_id !== updateData.make_id) {
+        throw new createHttpError.Conflict('Selected model does not belong to the specified make.');
+      }
+
+      await vehicle.update(vehicleData);
+      return vehicle;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   }
 
   async assignCustomerWithData(
@@ -210,13 +239,13 @@ class VehicleService {
     return await sequelize.transaction(async (t) => {
       const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
       if (!vehicle) {
-        throw new createError.NotFound('Vehicle not found');
+        throw new createHttpError.NotFound('Vehicle not found');
       }
 
       const customer = await CustomerService.createOrUpdateCustomer(customerData, t);
 
       if (vehicle.customer_id && vehicle.customer_id !== customer.id) {
-        throw new createError.Conflict('Vehicle already assigned to another customer');
+        throw new createHttpError.Conflict('Vehicle already assigned to another customer');
       }
 
       const isNew = vehicle.customer_id !== customer.id;
