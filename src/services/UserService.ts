@@ -7,6 +7,7 @@ import { GetUsersOptions } from '../types/user';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { LIMIT, PAGE, USER_ROLE } from '../constants/constants';
+import { sendUserDeletedEmail } from '../utils/email/sendUserDeletedEmail';
 
 export class UserService {
   public async createUser(data: CreateUserDTO) {
@@ -81,7 +82,14 @@ export class UserService {
       throw new createError.NotFound('User not found');
     }
 
+    const userEmail = user.email;
+    const userFirstName = user.firstName;
+    const userIsVerified = user.isVerified;
+
     await user.destroy();
+    if (userIsVerified) {
+      await sendUserDeletedEmail(userEmail, userFirstName!);
+    }
     return { message: 'User deleted successfully' };
   }
 

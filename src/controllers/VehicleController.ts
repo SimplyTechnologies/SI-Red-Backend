@@ -11,6 +11,8 @@ import {
   SuccessResponse,
   Request,
   Query,
+  Patch,
+  Security,
 } from 'tsoa';
 import { stringify } from 'csv-stringify';
 import { Options as StringifyOptions } from 'csv-stringify/sync';
@@ -41,14 +43,29 @@ export class VehicleController extends Controller {
   }
 
   @Get('/')
+  @Security('bearerAuth')
   public async getVehicles(
     @Request() req: AuthenticatedRequest,
     @Query() page: number = PAGE,
     @Query() limit: number = LIMIT,
-    @Query() search?: string
+    @Query() search?: string,
+    @Query() make?: string,
+    @Query() model?: string[],
+    @Query() availability?: string
   ): Promise<VehicleResponse[]> {
     const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
-    return await VehicleService.getAllVehicles({ userId, page, limit, search });
+
+    const modelArray = model ? (Array.isArray(model) ? model : [model]) : undefined;
+
+    return await VehicleService.getAllVehicles({
+      userId,
+      page,
+      limit,
+      search,
+      make,
+      model: modelArray,
+      availability,
+    });
   }
 
   @Get('/download-csv')
@@ -117,7 +134,7 @@ export class VehicleController extends Controller {
     return vehicle.get({ plain: true });
   }
 
-  @Put('/{id}')
+  @Patch('/{id}')
   public async updateVehicle(
     @Path() id: string,
     @Body() updateData: Partial<VehicleInput>

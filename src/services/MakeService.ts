@@ -1,4 +1,5 @@
 import { Make } from '../models';
+import { normalizeName } from '../utils/normalizers';
 
 class MakeService {
   async getAllMakes() {
@@ -6,10 +7,12 @@ class MakeService {
   }
 
   async getOrCreateMakeId(name: string): Promise<number> {
-    let make = await Make.findOne({ where: { name } });
+    const normalizedName = normalizeName(name);
+
+    let make = await Make.findOne({ where: { name: normalizedName } });
 
     if (!make) {
-      make = await Make.create({ name });
+      make = await Make.create({ name: normalizedName });
     }
 
     return make.id;

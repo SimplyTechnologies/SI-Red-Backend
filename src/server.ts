@@ -11,7 +11,7 @@ import { config } from 'dotenv';
 import passport from './config/passport';
 import cookieParser from 'cookie-parser';
 import { errorHandler } from './middlewares/errorHandler';
-import { vehicleValidationRules } from './validations/vehicle.validation';
+import { cleanValidators, vehicleValidationRules } from './validations/vehicle.validation';
 import authMiddleware from './middlewares/authMiddleware';
 import { vinValidationRules } from './validations/vin.validation';
 
@@ -46,7 +46,16 @@ app.post(
 
 app.post(
   '/vehicles',
-  vehicleValidationRules,
+  cleanValidators(vehicleValidationRules),
+  validateRequest,
+  (req: Request, res: Response, next: NextFunction) => {
+    next();
+  }
+);
+
+app.patch(
+  '/vehicles/:id',
+  cleanValidators(vehicleValidationRules),
   validateRequest,
   (req: Request, res: Response, next: NextFunction) => {
     next();

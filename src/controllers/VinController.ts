@@ -7,6 +7,6 @@ import { VinResponse } from '../types/vin';
 export class VinController extends Controller {
   @Get('/')
   public async decodeVin(@Query() vin: string): Promise<VinResponse> {
-    return await VinService.decodeVin(vin);
+    return await VinService.decodeVinAndCreateIfNotExists(vin);
   }
 }

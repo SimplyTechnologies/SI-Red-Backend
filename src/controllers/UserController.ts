@@ -18,7 +18,6 @@ import { UserService } from '../services/UserService';
 import { UpdateUserDTO, UpdateUserResponse, UserResponse } from '../types/user';
 import { CreateUserDTO } from '../types/user';
 import { USER_ROLE } from '../constants/constants';
-import createError from 'http-errors';
 import { LIMIT, PAGE } from '../constants/constants';
 import { UserAttributes } from '../types/user';
 import { AuthenticatedRequest } from '../types/auth';
@@ -29,6 +28,8 @@ import { validateActivateUser } from '../validations/activateUser.validation';
 import { validateRequest } from '../middlewares/validateRequest';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import createError from 'http-errors';
+import { TokenExpiredError } from 'jsonwebtoken';
 
 @Route('users')
 @Tags('User')
@@ -80,31 +81,37 @@ export class UserController extends Controller {
   }
 
   @Get('/verify')
-  public async verifyToken(@Query() token?: string): Promise<{ name: string; email: string }> {
-    try {
-      if (!token) {
-        throw new createError.BadRequest('No token provided');
-      }
+  public async verifyToken(@Query() token?: string): Promise<{
+    name?: string;
+    email?: string;
+    isVerified: boolean;
+    tokenExpired: boolean;
+  }> {
+    if (!token) {
+      return { isVerified: false, tokenExpired: true };
+    }
 
+    try {
       const decoded = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET!) as {
         userId: string;
       };
-      const userId = decoded.userId;
 
-      const user = await this.userService.getUserById(userId);
-
+      const user = await this.userService.getUserById(decoded.userId);
       if (!user) {
-        throw new createError.NotFound('User not found');
+        return { isVerified: false, tokenExpired: true };
       }
 
-      if (user.firstName === null) {
-        throw new createError.BadRequest('User first name cannot be null');
+      return {
+        name: user.firstName ?? '',
+        email: user.email,
+        isVerified: user.isVerified,
+        tokenExpired: false,
+      };
+    } catch (error: unknown) {
+      if (error instanceof TokenExpiredError) {
+        return { isVerified: false, tokenExpired: true };
       }
-
-      return { name: user.firstName, email: user.email };
-    } catch (error) {
-      console.error('Token verification error:', error);
-      throw new createError.Unauthorized('Invalid or expired token');
+      return { isVerified: false, tokenExpired: true };
     }
   }
 

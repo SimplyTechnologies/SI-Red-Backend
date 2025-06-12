@@ -5,10 +5,13 @@ import { AuthenticatedRequest } from '../types/auth';
 
 const publicPaths = [
   '/auth/signin',
+  '/auth/forgot-password',
+  '/auth/reset-password',
   '/docs',
   '/swagger.json',
   '/users/verify',
-  '/users/activate'
+  '/users/activate',
+  '/auth/verify-reset-token',
 ];
 
 const validRoles: UserRole[] = ['SUPER_ADMIN', 'USER'];
