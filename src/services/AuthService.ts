@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { User } from '../models';
 import { config } from 'dotenv';
 import { JWT_TOKEN_EXPIRATION } from '../constants/constants';
@@ -116,5 +116,17 @@ export class AuthService {
     await sendResetPasswordEmail(user.email, user.id, user.firstName ?? 'User');
 
     return { message: 'Password reset email has been sent to your email address.' };
+  }
+
+  async verifyResetToken(token: string): Promise<{ message: string }> {
+    try {
+      jwt.verify(token, process.env.RESET_PASSWORD_TOKEN_SECRET!);
+      return { message: 'Token is valid' };
+    } catch (err: unknown) {
+      if (err instanceof TokenExpiredError) {
+        throw createHttpError.Unauthorized('Reset token has expired');
+      }
+      throw createHttpError.Unauthorized('Invalid reset token');
+    }
   }
 }
