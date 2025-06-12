@@ -7,6 +7,9 @@ import CustomerService from './CustomerService';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
 import { sequelize } from '../config/db';
 import createHttpError from 'http-errors';
+import { Readable } from 'stream';
+import { stringify } from 'csv-stringify';
+import { Options as StringifyOptions } from 'csv-stringify/sync';
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -318,10 +321,16 @@ class VehicleService {
           availability: this.getAvailabilityStatus(plain.status),
         };
       });
-    } catch (error) {
-      console.error('Error generating CSV data:', error);
-      throw new createHttpError.InternalServerError('Error generating CSV data');
+    } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Error generating CSV data:', {
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
+    
+    throw new createHttpError.InternalServerError('Error generating CSV data');
+  }
   }
 
   private getFormattedLocationParts(plain: PlainVehicleLocation): string[] {
@@ -350,6 +359,52 @@ class VehicleService {
     }
   }
 
+  async generateCSVStream(search?: string, userId?: string, type?: 'vehicles' | 'favorites'): Promise<{
+    stream: NodeJS.ReadableStream;
+    filename: string;
+  }> {
+    try {
+      const vehicles = type === 'favorites'
+        ? await this.getVehiclesForCSV(search, userId, true)
+        : await this.getVehiclesForCSV(search);
+
+      const date = new Date().toISOString().split('T')[0];
+      const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
+      const filename = `${prefix}_${date}.csv`;
+
+      const options: StringifyOptions = {
+        header: true,
+        columns: [
+          { key: 'make', header: 'Make' },
+          { key: 'model', header: 'Model' },
+          { key: 'vin', header: 'VIN' },
+          { key: 'year', header: 'Year' },
+          { key: 'combinedLocation', header: 'Combined Location' },
+          { key: 'location', header: 'Coordinates' },
+          { key: 'availability', header: 'Availability' }
+        ],
+        cast: {
+          string: (value: unknown): string => 
+            typeof value === 'string' ? value.replace(/"/g, '""') : String(value)
+        },
+        quoted: true,
+        quoted_empty: true,
+        record_delimiter: '\n'
+      };
+
+      const stream = Readable.from(vehicles).pipe(stringify(options));
+      return { stream, filename };
+    } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Failed to generate CSV file:', {
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+    throw new createHttpError.InternalServerError('Failed to generate CSV file');
+  }
 }
+}
+
 
 export default new VehicleService();

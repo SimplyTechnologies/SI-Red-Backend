@@ -14,9 +14,6 @@ import {
   Patch,
   Security,
 } from 'tsoa';
-import { stringify } from 'csv-stringify';
-import { Options as StringifyOptions } from 'csv-stringify/sync';
-import { Readable } from 'stream';
 import VehicleService from '../services/VehicleService';
 import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
 import { AuthenticatedRequest } from '../types/auth';
@@ -69,55 +66,28 @@ export class VehicleController extends Controller {
   }
 
   @Get('/download-csv')
-  public async downloadCSV(
-    @Request() req: AuthenticatedRequest,
-    @Query() search?: string,
-    @Query() type?: 'vehicles' | 'favorites'
-  ): Promise<NodeJS.ReadableStream> {
-    try {
-      const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
-      
-      // Get vehicles based on type
-      const vehicles = type === 'favorites'
-        ? await VehicleService.getVehiclesForCSV(search, userId, true)
-        : await VehicleService.getVehiclesForCSV(search);
+@Security('bearerAuth')
+public async downloadCSV(
+  @Request() req: AuthenticatedRequest,
+  @Query() search?: string,
+  @Query() type?: 'vehicles' | 'favorites'
+): Promise<NodeJS.ReadableStream> {
+  try {
+    const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
+    const { stream, filename } = await VehicleService.generateCSVStream(search, userId, type);
 
-      const date = new Date().toISOString().split('T')[0];
-      const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
-      const filename = `${prefix}_${date}.csv`;
+    this.setHeader('Content-Type', 'text/csv; charset=UTF-8');
+    this.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    this.setHeader('Cache-Control', 'no-cache');
+    this.setStatus(200);
 
-      this.setHeader('Content-Type', 'text/csv; charset=UTF-8');
-      this.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      this.setHeader('Cache-Control', 'no-cache');
-      this.setStatus(200);
-
-      const options: StringifyOptions = {
-        header: true,
-        columns: [
-          { key: 'make', header: 'Make' },
-          { key: 'model', header: 'Model' },
-          { key: 'vin', header: 'VIN' },
-          { key: 'year', header: 'Year' },
-          { key: 'combinedLocation', header: 'Combined Location' },
-          { key: 'location', header: 'Coordinates' },
-          { key: 'availability', header: 'Availability' }
-        ],
-        cast: {
-          string: (value: unknown): string => 
-            typeof value === 'string' ? value.replace(/"/g, '""') : String(value)
-        },
-        quoted: true,
-        quoted_empty: true,
-        record_delimiter: '\n'
-      };
-
-      return Readable.from(vehicles).pipe(stringify(options));
-    } catch (error) {
-      console.error('Error generating CSV:', error);
-      this.setStatus(500);
-      throw new Error('Failed to generate CSV file');
-    }
+    return stream;
+  } catch (error) {
+    console.error('Error downloading CSV:', error);
+    this.setStatus(500);
+    throw error;
   }
+}
 
   @Get('/map-points')
   public async getVehicleMapPoints(@Query() search?: string): Promise<VehicleMapPoint[]> {
