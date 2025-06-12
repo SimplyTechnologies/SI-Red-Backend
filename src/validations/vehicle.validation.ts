@@ -1,4 +1,5 @@
 import { body } from 'express-validator';
+import { Vehicle } from '../models';
 
 export const vehicleValidationRules = [
   body('make_id')
@@ -21,9 +22,14 @@ export const vehicleValidationRules = [
     .isLength({ min: 17, max: 17 })
     .withMessage('VIN must be exactly 17 characters long')
     .matches(/^[A-HJ-NPR-Z0-9]{17}$/)
-    .withMessage('VIN contains invalid characters'),
-
-  body('location').notEmpty().withMessage('Vehicle location is required.'),
+    .withMessage('VIN contains invalid characters')
+    .custom(async (value, {req}) => {
+      const vehicleId = req?.params?.id;
+      const existing = await Vehicle.findOne({ where: { vin: value } });
+      if (existing && existing.id !== vehicleId) {
+        throw new Error('VIN already exists.');
+      }
+    }),,
 
   body('street').trim().notEmpty().withMessage('Street is required'),
 
@@ -42,3 +48,9 @@ export const vehicleValidationRules = [
     .isPostalCode('any')
     .withMessage('Invalid postal code'),
 ];
+
+import { ValidationChain } from 'express-validator';
+
+export function cleanValidators(arr: (ValidationChain | undefined)[]): ValidationChain[] {
+  return arr.filter((v): v is ValidationChain => v !== undefined);
+}

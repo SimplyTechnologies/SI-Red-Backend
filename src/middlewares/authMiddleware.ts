@@ -4,7 +4,16 @@ import { UserRole } from '../types/user';
 import { AuthenticatedRequest } from '../types/auth';
 import { User } from '../models';
 
-const publicPaths = ['/auth/signin', '/docs', '/swagger.json', '/users/verify', '/users/activate'];
+const publicPaths = [
+  '/auth/signin',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/docs',
+  '/swagger.json',
+  '/users/verify',
+  '/users/activate',
+  '/auth/verify-reset-token',
+];
 
 const validRoles: UserRole[] = ['SUPER_ADMIN', 'USER'];
 

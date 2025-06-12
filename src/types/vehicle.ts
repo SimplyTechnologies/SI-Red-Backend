@@ -17,6 +17,9 @@ export interface GetVehiclesOptions {
   page: number;
   limit: number;
   search?: string;
+  make?: string;
+  model?: string[]; 
+  availability?: string;
 }
 
 export interface VehicleInput {

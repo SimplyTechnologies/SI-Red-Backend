@@ -12,6 +12,7 @@ import {
   Request,
   Query,
   Patch,
+  Security,
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
 import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
@@ -39,14 +40,29 @@ export class VehicleController extends Controller {
   }
 
   @Get('/')
+  @Security('bearerAuth')
   public async getVehicles(
     @Request() req: AuthenticatedRequest,
     @Query() page: number = PAGE,
     @Query() limit: number = LIMIT,
-    @Query() search?: string
+    @Query() search?: string,
+    @Query() make?: string,
+    @Query() model?: string[],
+    @Query() availability?: string
   ): Promise<VehicleResponse[]> {
     const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
-    return await VehicleService.getAllVehicles({ userId, page, limit, search });
+
+    const modelArray = model ? (Array.isArray(model) ? model : [model]) : undefined;
+
+    return await VehicleService.getAllVehicles({
+      userId,
+      page,
+      limit,
+      search,
+      make,
+      model: modelArray,
+      availability,
+    });
   }
 
   @Get('/map-points')
