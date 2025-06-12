@@ -1,13 +1,12 @@
-import { GetVehiclesOptions, VehicleInput, VehicleResponse, VehicleCSVData, PlainVehicleLocation } from '../types/vehicle';
+import { GetVehiclesOptions, VehicleInput, VehicleResponse, VehicleCSVData,
+  PlainVehicleLocation  } from '../types/vehicle';
 import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize, UniqueConstraintError } from 'sequelize';
 import CustomerService from './CustomerService';
-import createError from 'http-errors';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
 import { sequelize } from '../config/db';
 import createHttpError from 'http-errors';
-
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -51,151 +50,183 @@ class VehicleService {
       }
 
       if (typeof data.make_id === 'number' && model.make_id !== data.make_id) {
-        throw new createHttpError.Conflict(
-          'Selected model does not belong to the specified make.'
-        );
+        throw new createHttpError.Conflict('Selected model does not belong to the specified make.');
       }
 
       return await Vehicle.create(vehicleData);
     } catch (err) {
       if (err instanceof UniqueConstraintError) {
-        throw new createHttpError.Conflict('VIN already exists.');
+        throw new createHttpError.BadRequest('VIN already exists.');
       }
-      console.error('Error creating vehicle:', err);
+
+      console.error(err);
       throw err;
     }
   }
 
-  async getAllVehicles({ userId, page, limit, search }: GetVehiclesOptions) {
-    try {
-      const offset = (page - 1) * limit;
-      const favoriteIds = userId 
-        ? await FavoriteService.getFavoriteVehicleIds(userId) 
-        : new Set();
-      const whereClause = search ? this.getWhereClauseSearch(search) : {};
+  async getAllVehicles({
+    userId,
+    page,
+    limit,
+    search,
+    make,
+    model,
+    availability,
+  }: GetVehiclesOptions) {
+    const offset = (page - 1) * limit;
 
-      const vehicles = await Vehicle.findAll({
-        where: whereClause,
-        include: [
-          {
-            model: Model,
-            as: 'model',
-            required: !!search,
-            attributes: ['name'],
-            include: [
-              {
-                model: Make,
-                as: 'make',
-                required: false,
-                attributes: ['name'],
-              },
-            ],
-          },
-        ],
-        limit,
-        offset,
-        order: [['createdAt', 'DESC']],
-      });
+    const favoriteIds = userId ? await FavoriteService.getFavoriteVehicleIds(userId) : new Set();
 
-      return vehicles.map((vehicle): VehicleResponse => {
-        const plain = vehicle.get({ plain: true }) as Omit<VehicleResponse, 'isFavorite'>;
-        return {
-          ...plain,
-          isFavorite: favoriteIds.has(vehicle.id),
-        };
-      });
-    } catch (error: unknown) {
-      this.handleError(error, 'Error fetching vehicles');
+    const searchClause = search ? this.getWhereClauseSearch(search) : {};
+
+    if (model?.length && !make) {
+      throw new createHttpError.BadRequest('Make must be selected when filtering by model.');
     }
+
+    const whereClause = {
+      ...searchClause,
+      ...(availability && {
+        status: { [Op.iLike]: availability },
+      }),
+    };
+
+    const vehicles = await Vehicle.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Model,
+          as: 'model',
+          required: !!(search || make || model?.length),
+          attributes: ['name'],
+          where: model?.length
+            ? {
+                name: { [Op.in]: model },
+              }
+            : undefined,
+          include: [
+            {
+              model: Make,
+              as: 'make',
+              required: !!make,
+              attributes: ['name'],
+              where: make
+                ? {
+                    name: { [Op.iLike]: make },
+                  }
+                : undefined,
+            },
+          ],
+        },
+      ],
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
+
+    return vehicles.map((vehicle): VehicleResponse => {
+      const plain = vehicle.get({ plain: true }) as Omit<VehicleResponse, 'isFavorite'>;
+      return {
+        ...plain,
+        isFavorite: favoriteIds.has(vehicle.id),
+      };
+    });
   }
 
   async getVehicleMapPoints(search?: string) {
-    try {
-      const whereClause = search ? this.getWhereClauseSearch(search) : {};
+    const whereClause = search ? this.getWhereClauseSearch(search) : {};
 
-      const vehicles = await Vehicle.findAll({
-        attributes: ['id', 'location'],
-        where: whereClause,
-        include: [
-          {
-            model: Model,
-            as: 'model',
-            required: !!search,
-            attributes: [],
-            include: [
-              {
-                model: Make,
-                as: 'make',
-                attributes: [],
-              },
-            ],
-          },
-        ],
-      });
+    const vehicles = await Vehicle.findAll({
+      attributes: ['id', 'location'],
+      where: whereClause,
+      include: [
+        {
+          model: Model,
+          as: 'model',
+          required: !!search,
+          attributes: [],
+          include: [
+            {
+              model: Make,
+              as: 'make',
+              attributes: [],
+            },
+          ],
+        },
+      ],
+    });
 
-      return vehicles.map((vehicle) => vehicle.get({ plain: true }));
-    } catch (error: unknown) {
-      this.handleError(error, 'Error fetching vehicle map points');
-    }
+    return vehicles.map((vehicle) => vehicle.get({ plain: true }));
   }
 
   async getVehicleById(id: string) {
-    try {
-      const vehicle = await Vehicle.findByPk(id, {
-        include: [
-          {
-            model: Model,
-            as: 'model',
-            attributes: ['name'],
-            include: [
-              {
-                model: Make,
-                as: 'make',
-                attributes: ['name'],
-              },
-            ],
-          },
-          {
-            model: Customer,
-            as: 'customer',
-            attributes: ['id', 'firstName', 'lastName', 'email', 'phoneNumber'],
-          },
-        ],
-      });
-
-      if (!vehicle) {
-        throw new createError.NotFound('Vehicle not found');
-      }
-
-      return vehicle;
-    } catch (error: unknown) {
-      this.handleError(error, 'Error fetching vehicle by ID');
-    }
+    return await Vehicle.findByPk(id, {
+      include: [
+        {
+          model: Model,
+          as: 'model',
+          attributes: ['name'],
+          include: [
+            {
+              model: Make,
+              as: 'make',
+              attributes: ['name', 'id'],
+            },
+          ],
+        },
+        {
+          model: Customer,
+          as: 'customer',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phoneNumber'],
+        },
+      ],
+    });
   }
 
   async deleteVehicle(id: string) {
-    try {
-      const vehicle = await Vehicle.findByPk(id);
-      if (!vehicle) {
-        throw new createError.NotFound('Vehicle not found');
-      }
-      await vehicle.destroy();
-      return { message: 'Vehicle deleted successfully' };
-    } catch (error: unknown) {
-      this.handleError(error, 'Error deleting vehicle');
+    const vehicle = await Vehicle.findByPk(id);
+    if (!vehicle) {
+      throw new Error('Vehicle not found');
     }
+    await vehicle.destroy();
+    return { message: 'Vehicle deleted successfully' };
   }
 
   async updateVehicle(id: string, updateData: Partial<VehicleInput>) {
+    const vehicle = await Vehicle.findByPk(id);
+
+    if (!vehicle) {
+      throw new createHttpError.NotFound('Vehicle not found.');
+    }
+
     try {
-      const vehicle = await Vehicle.findByPk(id);
-      if (!vehicle) {
-        throw new createError.NotFound('Vehicle not found');
+      const vehicleData = {
+        ...updateData,
+        id,
+        status: updateData.status ?? 'in stock',
+      };
+
+      const model = await Model.findByPk(updateData.model_id, {
+        include: [{ model: Make, as: 'make' }],
+      });
+
+      if (!model) {
+        throw new createHttpError.BadRequest('Model not found.');
       }
-      await vehicle.update(updateData);
+
+      const modelMake = await Make.findByPk(model.make_id);
+      if (!modelMake) {
+        throw new createHttpError.BadRequest('Make for model not found.');
+      }
+
+      if (typeof updateData.make_id === 'number' && model.make_id !== updateData.make_id) {
+        throw new createHttpError.Conflict('Selected model does not belong to the specified make.');
+      }
+
+      await vehicle.update(vehicleData);
       return vehicle;
-    } catch (error: unknown) {
-      this.handleError(error, 'Error updating vehicle');
+    } catch (err) {
+      console.error(err);
+      throw err;
     }
   }
 
@@ -206,135 +237,105 @@ class VehicleService {
     vehicle: Vehicle;
     message: string;
   }> {
-    try {
-      return await sequelize.transaction(async (t) => {
-        const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
-        if (!vehicle) {
-          throw new createError.NotFound('Vehicle not found');
-        }
-
-        const customer = await CustomerService.createOrUpdateCustomer(customerData, t);
-
-        if (vehicle.customer_id && vehicle.customer_id !== customer.id) {
-          throw new createError.Conflict('Vehicle already assigned to another customer');
-        }
-
-        const isNew = vehicle.customer_id !== customer.id;
-
-        await vehicle.update(
-          {
-            customer_id: customer.id,
-            assignedDate: new Date(),
-            status: 'sold',
-          },
-          { transaction: t }
-        );
-
-        const message = isNew
-          ? 'Customer created and assigned successfully'
-          : 'Customer updated and assigned successfully';
-
-        return { vehicle, message };
-      });
-    } catch (error: unknown) {
-      this.handleError(error, 'Error assigning customer to vehicle');
-    }
-  }
-
-
-async getVehiclesForCSV(search?: string, userId?: string, isFavorites: boolean = false): Promise<VehicleCSVData[]> {
-  try {
-    const whereClause = search ? this.getWhereClauseSearch(search) : {};
-
-    // Get favorite vehicle IDs if needed
-    let favoriteIds: Set<string> = new Set();
-    if (isFavorites && userId) {
-      favoriteIds = await FavoriteService.getFavoriteVehicleIds(userId);
-      if (favoriteIds.size === 0) {
-        throw new createError.NotFound('No favorite vehicles found');
+    return await sequelize.transaction(async (t) => {
+      const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
+      if (!vehicle) {
+        throw new createHttpError.NotFound('Vehicle not found');
       }
-    }
 
-    const vehicles = await Vehicle.findAll({
-      where: {
-        ...whereClause,
-        ...(isFavorites && favoriteIds.size > 0 && {
-          id: { [Op.in]: Array.from(favoriteIds) }
-        }),
-      },
-      include: [
+      const customer = await CustomerService.createOrUpdateCustomer(customerData, t);
+
+      if (vehicle.customer_id && vehicle.customer_id !== customer.id) {
+        throw new createHttpError.Conflict('Vehicle already assigned to another customer');
+      }
+
+      const isNew = vehicle.customer_id !== customer.id;
+
+      await vehicle.update(
         {
-          model: Model,
-          as: 'model',
-          required: !!search,
-          attributes: ['name'],
-          include: [
-            {
-              model: Make,
-              as: 'make',
-              required: false,
-              attributes: ['name'],
-            },
-          ],
+          customer_id: customer.id,
+          assignedDate: new Date(),
+          status: 'sold',
         },
-      ],
-      attributes: [
-        'vin',
-        'year',
-        'street',
-        'city',
-        'state',
-        'country',
-        'location',
-        'status'
-      ],
-      order: [['createdAt', 'DESC']],
-    });
-
-    if (!vehicles.length) {
-      throw new createError.NotFound(
-        isFavorites ? 'No favorite vehicles found' : 'No vehicles found matching the criteria'
+        { transaction: t }
       );
-    }
 
-    return vehicles.map(vehicle => {
-      const plain = vehicle.get({ plain: true });
-      const locationParts = this.getFormattedLocationParts(plain);
-      const combinedLocation = this.formatLocationString(locationParts);
+      const message = isNew
+        ? 'Customer created and assigned successfully'
+        : 'Customer updated and assigned successfully';
 
-      return {
-        make: this.formatField(plain.model?.make?.name, 'Unknown Make'),
-        model: this.formatField(plain.model?.name, 'Unknown Model'),
-        vin: this.formatField(plain.vin, 'N/A'),
-        year: this.formatField(plain.year, 'N/A'),
-        combinedLocation: this.formatField(combinedLocation, 'No location provided'),
-        location: this.formatField(plain.location, 'No coordinates'),
-        availability: this.getAvailabilityStatus(plain.status)
-      };
+      return { vehicle, message };
     });
-  } catch (error: unknown) {
-    this.handleError(error, 'Error generating CSV data');
   }
-}
+    async getVehiclesForCSV(search?: string, userId?: string, isFavorites = false): Promise<VehicleCSVData[]> {
+    try {
+      const whereClause = search ? this.getWhereClauseSearch(search) : {};
+      let favoriteIds: Set<string> = new Set();
 
-private getFormattedLocationParts(plain: PlainVehicleLocation): string[] {
-  return [
-    plain.street,
-    plain.city,
-    plain.state,
-    plain.country
-  ].filter((part): part is string => typeof part === 'string' && part.trim() !== '');
-}
+      if (isFavorites && userId) {
+        favoriteIds = await FavoriteService.getFavoriteVehicleIds(userId);
+        if (favoriteIds.size === 0) throw new createHttpError.NotFound('No favorite vehicles found');
+      }
+
+      const vehicles = await Vehicle.findAll({
+        where: {
+          ...whereClause,
+          ...(isFavorites && favoriteIds.size > 0 && {
+            id: { [Op.in]: Array.from(favoriteIds) },
+          }),
+        },
+        include: [
+          {
+            model: Model,
+            as: 'model',
+            required: !!search,
+            attributes: ['name'],
+            include: [{ model: Make, as: 'make', required: false, attributes: ['name'] }],
+          },
+        ],
+        attributes: ['vin', 'year', 'street', 'city', 'state', 'country', 'location', 'status'],
+        order: [['createdAt', 'DESC']],
+      });
+
+      if (!vehicles.length) {
+        throw new createHttpError.NotFound(
+          isFavorites ? 'No favorite vehicles found' : 'No vehicles found matching the criteria'
+        );
+      }
+
+      return vehicles.map(vehicle => {
+        const plain = vehicle.get({ plain: true });
+        const locationParts = this.getFormattedLocationParts(plain);
+        const combinedLocation = this.formatLocationString(locationParts);
+
+        return {
+          make: this.formatField(plain.model?.make?.name, 'Unknown Make'),
+          model: this.formatField(plain.model?.name, 'Unknown Model'),
+          vin: this.formatField(plain.vin, 'N/A'),
+          year: this.formatField(plain.year, 'N/A'),
+          combinedLocation: this.formatField(combinedLocation, 'No location provided'),
+          location: this.formatField(plain.location, 'No coordinates'),
+          availability: this.getAvailabilityStatus(plain.status),
+        };
+      });
+    } catch (error) {
+      console.error('Error generating CSV data:', error);
+      throw new createHttpError.InternalServerError('Error generating CSV data');
+    }
+  }
+
+  private getFormattedLocationParts(plain: PlainVehicleLocation): string[] {
+    return [plain.street, plain.city, plain.state, plain.country].filter(
+      (part): part is string => typeof part === 'string' && part.trim() !== ''
+    );
+  }
 
   private formatLocationString(parts: string[]): string {
     return parts.length > 0 ? parts.join(', ') : '';
   }
 
   private formatField(value: string | null | undefined, defaultValue: string): string {
-    if (!value || typeof value !== 'string' || value.trim() === '') {
-      return defaultValue;
-    }
-    return value.trim();
+    return !value || value.trim() === '' ? defaultValue : value.trim();
   }
 
   private getAvailabilityStatus(status: string | undefined): string {
@@ -349,47 +350,6 @@ private getFormattedLocationParts(plain: PlainVehicleLocation): string[] {
     }
   }
 
-  private handleError(error: unknown, context: string): never {
-    const errorContext = {
-      service: 'VehicleService',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-
-    if (error instanceof createError.HttpError) {
-      console.error('HTTP Error:', {
-        ...errorContext,
-        statusCode: error.statusCode,
-        message: error.message,
-      });
-      throw error;
-    }
-
-    if (error instanceof Error) {
-      console.error('Error:', {
-        ...errorContext,
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      });
-
-      if (process.env.NODE_ENV === 'development') {
-        console.debug('Detailed error information:', {
-          error,
-          context: errorContext,
-        });
-      }
-    } else {
-      console.error('Unknown error:', {
-        ...errorContext,
-        error,
-      });
-    }
-
-    throw new createError.InternalServerError(
-      `${context}: An unexpected error occurred`
-    );
-  }
 }
 
 export default new VehicleService();
