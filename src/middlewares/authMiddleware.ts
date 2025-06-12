@@ -10,7 +10,8 @@ const publicPaths = [
   '/docs',
   '/swagger.json',
   '/users/verify',
-  '/users/activate'
+  '/users/activate',
+  '/auth/verify-reset-token',
 ];
 
 const validRoles: UserRole[] = ['SUPER_ADMIN', 'USER'];

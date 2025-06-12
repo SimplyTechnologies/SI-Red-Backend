@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Route, Tags, SuccessResponse, Middlewares, Security, Request } from 'tsoa';
+import { Body, Controller, Post, Route, Tags, SuccessResponse, Middlewares, Request } from 'tsoa';
 import { AuthService } from '../services/AuthService';
 import { SignInRequest, SignInResponse } from '../types/user';
 import { validateResetPassword } from '../validations/resetPassword.validation';
@@ -48,10 +48,14 @@ export class AuthController extends Controller {
   }
 
   @Post('/request-password-reset')
-  @Security('bearerAuth')
   public async requestPasswordReset(
     @Request() req: AuthenticatedRequest
   ): Promise<{ message: string }> {
     return await new AuthService().requestPasswordReset(req.user!.userId);
+  }
+
+  @Post('/verify-reset-token')
+  public async verifyResetToken(@Body() body: { token: string }): Promise<{ message: string }> {
+    return await new AuthService().verifyResetToken(body.token);
   }
 }
