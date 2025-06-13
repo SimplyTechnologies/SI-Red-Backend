@@ -43,6 +43,10 @@ export class AuthService {
     return { accessToken, refreshToken, user };
   }
 
+  async forceLogoutUser(userId: string): Promise<void> {
+    await User.update({ forceLogoutAt: new Date() }, { where: { id: userId } });
+  }
+
   async forgotPassword(email: string): Promise<{ message: string }> {
     const user = await User.findOne({ where: { email } });
 
@@ -98,6 +102,7 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(password, 10);
     await user.update({ passwordHash });
+    this.forceLogoutUser(user.id);
 
     return { message: 'Password has been reset successfully' };
   }

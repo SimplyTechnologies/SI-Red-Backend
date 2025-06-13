@@ -130,10 +130,4 @@ export class VehicleController extends Controller {
   public async deleteVehicle(@Path() id: string): Promise<{ message: string }> {
     return await VehicleService.deleteVehicle(id);
   }
-  
-  @Post('/{id}/unassign-customer')
-  @Security('bearerAuth')
-  public async unassignCustomer(@Path() id: string): Promise<{ message: string }> {
-    return await VehicleService.unassignCustomer(id);
-  }
 }
