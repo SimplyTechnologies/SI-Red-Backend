@@ -68,6 +68,7 @@ export interface VehicleAttributes {
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;
+  model?: ModelInfo;
 }
 
 export type VehicleCreationAttributes = Optional<
@@ -79,3 +80,20 @@ export type VehicleMapPoint = {
   id: string;
   location: string;
 };
+
+export interface VehicleCSVData {
+  make: string;
+  model: string;
+  vin: string;
+  year: string;
+  combinedLocation: string;
+  location: string;
+  availability: string;
+}
+
+export interface PlainVehicleLocation {
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
