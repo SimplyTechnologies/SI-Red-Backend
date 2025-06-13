@@ -8,6 +8,7 @@ const publicPaths = [
   '/auth/signin',
   '/auth/forgot-password',
   '/auth/reset-password',
+  '/auth/refresh',
   '/docs',
   '/swagger.json',
   '/users/verify',

@@ -3,23 +3,31 @@ import { body } from 'express-validator';
 export const validateUpdateUser = [
   body('firstName')
     .optional()
-    .isString()
-    .withMessage('First name must be a string')
     .notEmpty()
-    .withMessage('First name cannot be empty'),
+    .withMessage('Enter the first name.')
+    .bail()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Enter a valid first name.')
+    .bail()
+    .matches(/^[A-Za-zÀ-ÿ\u00C0-\u017F' -]+$/)
+    .withMessage('Enter a valid first name.'),
 
   body('lastName')
     .optional()
-    .isString()
-    .withMessage('Last name must be a string')
     .notEmpty()
-    .withMessage('Last name cannot be empty'),
+    .withMessage('Enter the last name.')
+    .bail()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Enter a valid last name.')
+    .bail()
+    .matches(/^[A-Za-zÀ-ÿ\u00C0-\u017F' -]+$/)
+    .withMessage('Enter a valid last name.'),
 
   body('phoneNumber')
     .optional()
     .notEmpty()
-    .withMessage('Phone Number cannot be empty')
+    .withMessage('Enter the phone number')
     .bail()
-    .matches(/^\+?[1-9]\d{7,14}$/)
-    .withMessage('Enter a valid Phone Number'),
+    .matches(/^\+\d{8,15}$/)
+    .withMessage('Phone number must start with "+" and contain 8 to 15 digits only.'),
 ];

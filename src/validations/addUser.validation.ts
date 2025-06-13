@@ -33,7 +33,7 @@ export const validateCreateUser = [
 
   body('phoneNumber')
     .notEmpty()
-    .withMessage('Phone Number is required')
+    .withMessage('Enter the phone number')
     .bail()
     .matches(/^\+\d{8,15}$/)
     .withMessage('Phone number must start with "+" and contain 8 to 15 digits only.'),
