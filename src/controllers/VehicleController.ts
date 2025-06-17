@@ -90,8 +90,14 @@ export class VehicleController extends Controller {
   }
 
   @Get('/map-points')
-  public async getVehicleMapPoints(@Query() search?: string): Promise<VehicleMapPoint[]> {
-    return await VehicleService.getVehicleMapPoints(search);
+  @Security('bearerAuth')
+  public async getVehicleMapPoints(
+    @Query() search?: string,
+    @Query() make?: string,
+    @Query() model?: string[], 
+    @Query() availability?: string
+  ): Promise<VehicleMapPoint[]> {
+    return await VehicleService.getVehicleMapPoints({ search, make, model, availability });
   }
 
   @Get('/{id}')

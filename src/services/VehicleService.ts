@@ -1,5 +1,10 @@
-import { GetVehiclesOptions, VehicleInput, VehicleResponse, VehicleCSVData,
-  PlainVehicleLocation  } from '../types/vehicle';
+import {
+  GetVehiclesOptions,
+  VehicleInput,
+  VehicleResponse,
+  VehicleCSVData,
+  PlainVehicleLocation,
+} from '../types/vehicle';
 import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize, UniqueConstraintError } from 'sequelize';
@@ -135,8 +140,24 @@ class VehicleService {
     });
   }
 
-  async getVehicleMapPoints(search?: string) {
-    const whereClause = search ? this.getWhereClauseSearch(search) : {};
+  async getVehicleMapPoints({
+    search,
+    make,
+    model,
+    availability,
+  }: Pick<GetVehiclesOptions, 'search' | 'make' | 'model' | 'availability'>) {
+    const searchClause = search ? this.getWhereClauseSearch(search) : {};
+
+    if (model?.length && !make) {
+      throw new createHttpError.BadRequest('Make must be selected when filtering by model.');
+    }
+
+    const whereClause = {
+      ...searchClause,
+      ...(availability && {
+        status: { [Op.iLike]: availability },
+      }),
+    };
 
     const vehicles = await Vehicle.findAll({
       attributes: ['id', 'location'],
@@ -145,13 +166,24 @@ class VehicleService {
         {
           model: Model,
           as: 'model',
-          required: !!search,
+          required: !!(search || make || model?.length),
           attributes: [],
+          where: model?.length
+            ? {
+                name: { [Op.in]: model },
+              }
+            : undefined,
           include: [
             {
               model: Make,
               as: 'make',
+              required: !!make,
               attributes: [],
+              where: make
+                ? {
+                    name: { [Op.iLike]: make },
+                  }
+                : undefined,
             },
           ],
         },
@@ -270,22 +302,28 @@ class VehicleService {
       return { vehicle, message };
     });
   }
-    async getVehiclesForCSV(search?: string, userId?: string, isFavorites = false): Promise<VehicleCSVData[]> {
+  async getVehiclesForCSV(
+    search?: string,
+    userId?: string,
+    isFavorites = false
+  ): Promise<VehicleCSVData[]> {
     try {
       const whereClause = search ? this.getWhereClauseSearch(search) : {};
       let favoriteIds: Set<string> = new Set();
 
       if (isFavorites && userId) {
         favoriteIds = await FavoriteService.getFavoriteVehicleIds(userId);
-        if (favoriteIds.size === 0) throw new createHttpError.NotFound('No favorite vehicles found');
+        if (favoriteIds.size === 0)
+          throw new createHttpError.NotFound('No favorite vehicles found');
       }
 
       const vehicles = await Vehicle.findAll({
         where: {
           ...whereClause,
-          ...(isFavorites && favoriteIds.size > 0 && {
-            id: { [Op.in]: Array.from(favoriteIds) },
-          }),
+          ...(isFavorites &&
+            favoriteIds.size > 0 && {
+              id: { [Op.in]: Array.from(favoriteIds) },
+            }),
         },
         include: [
           {
@@ -306,7 +344,7 @@ class VehicleService {
         );
       }
 
-      return vehicles.map(vehicle => {
+      return vehicles.map((vehicle) => {
         const plain = vehicle.get({ plain: true });
         const locationParts = this.getFormattedLocationParts(plain);
         const combinedLocation = this.formatLocationString(locationParts);
@@ -322,15 +360,15 @@ class VehicleService {
         };
       });
     } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('Error generating CSV data:', {
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
+      if (error instanceof Error) {
+        console.error('Error generating CSV data:', {
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        });
+      }
+
+      throw new createHttpError.InternalServerError('Error generating CSV data');
     }
-    
-    throw new createHttpError.InternalServerError('Error generating CSV data');
-  }
   }
 
   private getFormattedLocationParts(plain: PlainVehicleLocation): string[] {
@@ -359,14 +397,19 @@ class VehicleService {
     }
   }
 
-  async generateCSVStream(search?: string, userId?: string, type?: 'vehicles' | 'favorites'): Promise<{
+  async generateCSVStream(
+    search?: string,
+    userId?: string,
+    type?: 'vehicles' | 'favorites'
+  ): Promise<{
     stream: NodeJS.ReadableStream;
     filename: string;
   }> {
     try {
-      const vehicles = type === 'favorites'
-        ? await this.getVehiclesForCSV(search, userId, true)
-        : await this.getVehiclesForCSV(search);
+      const vehicles =
+        type === 'favorites'
+          ? await this.getVehiclesForCSV(search, userId, true)
+          : await this.getVehiclesForCSV(search);
 
       const date = new Date().toISOString().split('T')[0];
       const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
@@ -381,30 +424,29 @@ class VehicleService {
           { key: 'year', header: 'Year' },
           { key: 'combinedLocation', header: 'Combined Location' },
           { key: 'location', header: 'Coordinates' },
-          { key: 'availability', header: 'Availability' }
+          { key: 'availability', header: 'Availability' },
         ],
         cast: {
-          string: (value: unknown): string => 
-            typeof value === 'string' ? value.replace(/"/g, '""') : String(value)
+          string: (value: unknown): string =>
+            typeof value === 'string' ? value.replace(/"/g, '""') : String(value),
         },
         quoted: true,
         quoted_empty: true,
-        record_delimiter: '\n'
+        record_delimiter: '\n',
       };
 
       const stream = Readable.from(vehicles).pipe(stringify(options));
       return { stream, filename };
     } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('Failed to generate CSV file:', {
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
+      if (error instanceof Error) {
+        console.error('Failed to generate CSV file:', {
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        });
+      }
+      throw new createHttpError.InternalServerError('Failed to generate CSV file');
     }
-    throw new createHttpError.InternalServerError('Failed to generate CSV file');
   }
 }
-}
-
 
 export default new VehicleService();
