@@ -14,6 +14,7 @@ import { errorHandler } from './middlewares/errorHandler';
 import { cleanValidators, vehicleValidationRules } from './validations/vehicle.validation';
 import authMiddleware from './middlewares/authMiddleware';
 import { vinValidationRules } from './validations/vin.validation';
+import vehicleUploadRoute from './routes/vehicle-upload.route';
 
 config();
 
@@ -73,6 +74,7 @@ app.get(
 
 app.use(authMiddleware);
 
+app.use('/vehicles', vehicleUploadRoute); 
 RegisterRoutes(app);
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

@@ -3,7 +3,7 @@ import {
   VehicleInput,
   VehicleResponse,
   VehicleCSVData,
-  PlainVehicleLocation,
+  PlainVehicleLocation, 
 } from '../types/vehicle';
 import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
@@ -36,41 +36,41 @@ class VehicleService {
     };
   }
 
-  async createVehicle(data: VehicleInput, userId: string) {
-    try {
-      const vehicleData = {
-        ...data,
-        user_id: userId,
-        status: data.status ?? 'in stock',
-      };
+    async createVehicle(data: VehicleInput, userId: string) {
+      try {
+        const vehicleData = {
+          ...data,
+          user_id: userId,
+          status: data.status ?? 'in stock',
+        };
 
-      const model = await Model.findByPk(data.model_id, {
-        include: [{ model: Make, as: 'make' }],
-      });
+        const model = await Model.findByPk(data.model_id, {
+          include: [{ model: Make, as: 'make' }],
+        });
 
-      if (!model) {
-        throw new createHttpError.BadRequest('Model not found.');
+        if (!model) {
+          throw new createHttpError.BadRequest('Model not found.');
+        }
+
+        const modelMake = await Make.findByPk(model.make_id);
+        if (!modelMake) {
+          throw new createHttpError.BadRequest('Make for model not found.');
+        }
+
+        if (typeof data.make_id === 'number' && model.make_id !== data.make_id) {
+          throw new createHttpError.Conflict('Selected model does not belong to the specified make.');
+        }
+
+        return await Vehicle.create(vehicleData);
+      } catch (err) {
+        if (err instanceof UniqueConstraintError) {
+          throw new createHttpError.BadRequest('VIN already exists.');
+        }
+
+        console.error(err);
+        throw err;
       }
-
-      const modelMake = await Make.findByPk(model.make_id);
-      if (!modelMake) {
-        throw new createHttpError.BadRequest('Make for model not found.');
-      }
-
-      if (typeof data.make_id === 'number' && model.make_id !== data.make_id) {
-        throw new createHttpError.Conflict('Selected model does not belong to the specified make.');
-      }
-
-      return await Vehicle.create(vehicleData);
-    } catch (err) {
-      if (err instanceof UniqueConstraintError) {
-        throw new createHttpError.BadRequest('VIN already exists.');
-      }
-
-      console.error(err);
-      throw err;
     }
-  }
 
   async getAllVehicles({
     userId,
