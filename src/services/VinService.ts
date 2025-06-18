@@ -17,7 +17,9 @@ class VinService {
       throw new Error('Invalid VIN or no data found');
     }
 
-    const makeName = result.Make.trim();
+    const makeName = result.Make.trim().toLowerCase();
+    const formattedMakeName = makeName.charAt(0).toUpperCase() + makeName.slice(1);
+
     const modelName = result.Model.trim();
     const year = parseInt(result.ModelYear);
     const makeId = await MakeService.getOrCreateMakeId(makeName);
@@ -25,7 +27,7 @@ class VinService {
 
     return {
       vin: result.VIN,
-      make: makeName,
+      make: formattedMakeName,
       makeId,
       model: modelName,
       modelId,
