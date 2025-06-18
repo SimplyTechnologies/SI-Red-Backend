@@ -23,6 +23,8 @@ import { CreateOrUpdateCustomerRequest } from '../types/customer';
 import { Middlewares } from 'tsoa';
 import { customerValidationRules } from '../validations/customer.validation';
 import { validateRequest } from '../middlewares/validateRequest';
+import { ParsedVehicleUpload } from '../types/upload';
+import { upload } from '../middlewares/multerMiddleware';
 
 @Route('vehicles')
 @Tags('Vehicle')
@@ -129,5 +131,14 @@ export class VehicleController extends Controller {
   @Delete('/{id}')
   public async deleteVehicle(@Path() id: string): Promise<{ message: string }> {
     return await VehicleService.deleteVehicle(id);
+  }
+
+  @Post('/upload-csv-preview')
+  @Middlewares([upload.single('file')])
+  @SuccessResponse('200', 'Parsed and validated')
+  public async uploadCSVPreview(@Request() req: Express.Request): Promise<ParsedVehicleUpload[]> {
+    const file = req.file;
+    if (!file) throw new Error('File is required');
+    return await VehicleService.parseAndValidateCSV(file.buffer);
   }
 }

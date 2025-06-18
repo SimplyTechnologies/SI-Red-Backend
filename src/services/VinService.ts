@@ -4,13 +4,16 @@ import ModelService from './ModelService';
 
 class VinService {
   async decodeVinAndCreateIfNotExists(vin: string) {
+    if (vin === '') {
+      throw new Error('Invalid VIN or no data found');
+    }
     const response = await axios.get(
       `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vin}?format=json`
     );
 
     const result = response.data?.Results?.[0];
 
-    if (!result || !result.Make || !result.Model) {
+    if (!result || !result.Make || !result.Model || result.ErrorCode !== '0') {
       throw new Error('Invalid VIN or no data found');
     }
 
