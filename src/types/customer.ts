@@ -34,4 +34,6 @@ export interface GetAllCustomersParams {
   page: number;
   limit: number;
   search?: string; 
+  sortBy?: 'name' | 'vehicle' | 'assignedDate' | 'email';
+  sortOrder?: 'ASC' | 'DESC';
 }
