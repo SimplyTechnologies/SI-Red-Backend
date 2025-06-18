@@ -304,6 +304,9 @@ class VehicleService {
   }
   async getVehiclesForCSV(
     search?: string,
+    make?: string,
+    model?: string[],
+    availability?: string,
     userId?: string,
     isFavorites = false
   ): Promise<VehicleCSVData[]> {
@@ -320,6 +323,7 @@ class VehicleService {
       const vehicles = await Vehicle.findAll({
         where: {
           ...whereClause,
+          ...(availability && { status: availability }),
           ...(isFavorites &&
             favoriteIds.size > 0 && {
               id: { [Op.in]: Array.from(favoriteIds) },
@@ -329,9 +333,22 @@ class VehicleService {
           {
             model: Model,
             as: 'model',
-            required: !!search,
+            required: !!search || !!model || !!make,
             attributes: ['name'],
-            include: [{ model: Make, as: 'make', required: false, attributes: ['name'] }],
+            where: {
+              ...(model && {
+                name: Array.isArray(model) ? { [Op.in]: model } : model,
+              }),
+            },
+            include: [
+              {
+                model: Make,
+                as: 'make',
+                required: !!make,
+                attributes: ['name'],
+                where: make ? { name: make } : undefined,
+              },
+            ],
           },
         ],
         attributes: ['vin', 'year', 'street', 'city', 'state', 'country', 'location', 'status'],
@@ -399,6 +416,9 @@ class VehicleService {
 
   async generateCSVStream(
     search?: string,
+    make?: string,
+    model?: string[],
+    availability?: string,
     userId?: string,
     type?: 'vehicles' | 'favorites'
   ): Promise<{
@@ -408,8 +428,8 @@ class VehicleService {
     try {
       const vehicles =
         type === 'favorites'
-          ? await this.getVehiclesForCSV(search, userId, true)
-          : await this.getVehiclesForCSV(search);
+          ? await this.getVehiclesForCSV(search, make, model, availability, userId, true)
+          : await this.getVehiclesForCSV(search, make, model, availability);
 
       const date = new Date().toISOString().split('T')[0];
       const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
