@@ -12,7 +12,7 @@ import CustomerService from './CustomerService';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
 import { sequelize } from '../config/db';
 import createHttpError from 'http-errors';
-import { Readable } from 'stream';
+import { Readable, PassThrough } from 'stream';
 import { stringify } from 'csv-stringify';
 import { Options as StringifyOptions } from 'csv-stringify/sync';
 
@@ -415,58 +415,84 @@ class VehicleService {
   }
 
   async generateCSVStream(
-    search?: string,
-    make?: string,
-    model?: string[],
-    availability?: string,
-    userId?: string,
-    type?: 'vehicles' | 'favorites'
-  ): Promise<{
-    stream: NodeJS.ReadableStream;
-    filename: string;
-  }> {
-    try {
-      const vehicles =
-        type === 'favorites'
-          ? await this.getVehiclesForCSV(search, make, model, availability, userId, true)
-          : await this.getVehiclesForCSV(search, make, model, availability);
+  search?: string,
+  make?: string,
+  model?: string[],
+  availability?: string,
+  userId?: string,
+  type?: 'vehicles' | 'favorites'
+): Promise<{
+  stream: NodeJS.ReadableStream;
+  filename: string;
+}> {
+  try {
+    const vehicles =
+      type === 'favorites'
+        ? await this.getVehiclesForCSV(search, make, model, availability, userId, true)
+        : await this.getVehiclesForCSV(search, make, model, availability);
 
-      const date = new Date().toISOString().split('T')[0];
-      const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
-      const filename = `${prefix}_${date}.csv`;
+    const date = new Date().toISOString().split('T')[0];
+    const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
+    const filename = `${prefix}_${date}.csv`;
 
-      const options: StringifyOptions = {
-        header: true,
-        columns: [
-          { key: 'make', header: 'Make' },
-          { key: 'model', header: 'Model' },
-          { key: 'vin', header: 'VIN' },
-          { key: 'year', header: 'Year' },
-          { key: 'combinedLocation', header: 'Combined Location' },
-          { key: 'location', header: 'Coordinates' },
-          { key: 'availability', header: 'Availability' },
-        ],
-        cast: {
-          string: (value: unknown): string =>
-            typeof value === 'string' ? value.replace(/"/g, '""') : String(value),
-        },
-        quoted: true,
-        quoted_empty: true,
-        record_delimiter: '\n',
-      };
+    // Create metadata lines
+    const filters: string[] = [];
+    if (make) filters.push(`Make = ${make}`);
+    if (model?.length) filters.push(`Model = ${model.join(', ')}`);
+    if (availability) filters.push(`Availability = ${availability}`);
+    if (search) filters.push(`Search = "${search}"`);
 
-      const stream = Readable.from(vehicles).pipe(stringify(options));
-      return { stream, filename };
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('Failed to generate CSV file:', {
-          message: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-        });
-      }
-      throw new createHttpError.InternalServerError('Failed to generate CSV file');
+    const filteredLine = filters.length > 0 ? `Filtered by: ${filters.join('; ')}` : 'Filtered by: None';
+    const exportedLine = `Exported at: ${new Date().toLocaleString()}`;
+
+    // Create header stream manually
+    const headerStream = new PassThrough();
+    headerStream.write(`"${filteredLine}"\n`);
+    headerStream.write(`"${exportedLine}"\n`);
+    headerStream.write('\n'); // Blank line
+    headerStream.end();
+
+    // Setup CSV options
+    const options: StringifyOptions = {
+      header: true,
+      columns: [
+        { key: 'make', header: 'Make' },
+        { key: 'model', header: 'Model' },
+        { key: 'vin', header: 'VIN' },
+        { key: 'year', header: 'Year' },
+        { key: 'combinedLocation', header: 'Combined Location' },
+        { key: 'location', header: 'Coordinates' },
+        { key: 'availability', header: 'Availability' },
+      ],
+      cast: {
+        string: (value: unknown): string =>
+          typeof value === 'string' ? value.replace(/"/g, '""') : String(value),
+      },
+      quoted: true,
+      quoted_empty: true,
+      record_delimiter: '\n',
+    };
+
+    const dataStream = Readable.from(vehicles).pipe(stringify(options));
+
+    // Combine both header and data streams
+    const combinedStream = new PassThrough();
+    headerStream.pipe(combinedStream, { end: false });
+    headerStream.on('end', () => {
+      dataStream.pipe(combinedStream);
+    });
+
+    return { stream: combinedStream, filename };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Failed to generate CSV file:', {
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      });
     }
+    throw new createHttpError.InternalServerError('Failed to generate CSV file');
   }
+}
 }
 
 export default new VehicleService();
