@@ -20,11 +20,9 @@ class MakeService {
 
   async getMakeById(id: number) {
     const make = await Make.findByPk(id);
-
     if (!make) {
       throw new Error('Make not found');
     }
-
     return make;
   }
 }

@@ -1,6 +1,8 @@
 import axios from 'axios';
 import MakeService from './MakeService';
 import ModelService from './ModelService';
+import { ParsedVehicleUpload } from '../types/upload';
+import { Vehicle } from '../models';
 
 class VinService {
   async decodeVinAndCreateIfNotExists(vin: string) {
@@ -32,6 +34,54 @@ class VinService {
       model: modelName,
       modelId,
       year: String(year),
+    };
+  }
+
+  async validateVinData(
+    vin: string,
+    input: { make?: string; model?: string; year?: string }
+  ): Promise<ParsedVehicleUpload> {
+    let vinData = null;
+    let vinError = null;
+
+    const existing = await Vehicle.findOne({ where: { vin } });
+    const vinExists = !!existing;
+
+    try {
+      vinData = await this.decodeVinAndCreateIfNotExists(vin);
+    } catch {}
+
+    const mismatch: ParsedVehicleUpload['mismatch'] = {};
+
+    const cleanedMake = input.make?.trim() || undefined;
+    const cleanedModel = input.model?.trim() || undefined;
+    const cleanedYear = input.year?.trim() || undefined;
+    console.log(typeof cleanedMake);
+    if (cleanedMake && vinData?.make && cleanedMake.toLowerCase() !== vinData.make.toLowerCase()) {
+      mismatch.make = { original: cleanedMake, actual: vinData.make };
+    }
+    if (
+      cleanedModel &&
+      vinData?.model &&
+      cleanedModel.toLowerCase() !== vinData.model.toLowerCase()
+    ) {
+      mismatch.model = { original: cleanedModel, actual: vinData.model };
+    }
+    if (cleanedYear && vinData?.year && cleanedYear !== vinData.year) {
+      mismatch.year = { original: cleanedYear, actual: vinData.year };
+    }
+
+    return {
+      vin,
+      make: cleanedMake || vinData?.make,
+      model: cleanedModel || vinData?.model,
+      year: cleanedYear || vinData?.year,
+      coordinates: undefined,
+      combinedLocation: undefined,
+      // exclude: !!vinError || Object.keys(mismatch).length > 0,
+      mismatch: Object.keys(mismatch).length > 0 && !vinError ? mismatch : undefined,
+      error: vinError,
+      vinExists,
     };
   }
 }

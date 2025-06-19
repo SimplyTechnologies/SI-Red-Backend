@@ -1,9 +1,10 @@
-import { Controller, Get, Query, Route, Tags, Path } from 'tsoa';
+import { Controller, Get, Query, Route, Tags, Path, Security } from 'tsoa';
 import ModelService from '../services/ModelService';
 import { ModelResponse } from '../types/model';
 
 @Route('models')
 @Tags('Model')
+@Security('bearerAuth')
 export class ModelController extends Controller {
   @Get('bymake/{id}')
   public async getAllModelsByMakeId(@Path() id: number): Promise<ModelResponse[]> {

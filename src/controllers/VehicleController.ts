@@ -25,9 +25,11 @@ import { customerValidationRules } from '../validations/customer.validation';
 import { validateRequest } from '../middlewares/validateRequest';
 import { ParsedVehicleUpload } from '../types/upload';
 import { upload } from '../middlewares/multerMiddleware';
+import VinService from '../services/VinService';
 
 @Route('vehicles')
 @Tags('Vehicle')
+@Security('bearerAuth')
 export class VehicleController extends Controller {
   @Post('/')
   @SuccessResponse('201', 'Created')
@@ -42,7 +44,6 @@ export class VehicleController extends Controller {
   }
 
   @Get('/')
-  @Security('bearerAuth')
   public async getVehicles(
     @Request() req: AuthenticatedRequest,
     @Query() page: number = PAGE,
@@ -68,7 +69,6 @@ export class VehicleController extends Controller {
   }
 
   @Get('/download-csv')
-  @Security('bearerAuth')
   public async downloadCSV(
     @Request() req: AuthenticatedRequest,
     @Query() search?: string,
@@ -94,6 +94,30 @@ export class VehicleController extends Controller {
   @Get('/map-points')
   public async getVehicleMapPoints(@Query() search?: string): Promise<VehicleMapPoint[]> {
     return await VehicleService.getVehicleMapPoints(search);
+  }
+
+  @Get('/validate-make-model')
+  public async validateMakeModel(
+    @Query() makeName: string,
+    @Query() modelName: string
+  ): Promise<{ makeMsg: string; modelMsg: string }> {
+    return VehicleService.validateMakeAndModel(makeName, modelName);
+  }
+
+  @Get('/validate-vin')
+  public async validateVin(
+    @Query() vin: string,
+    @Query() make?: string,
+    @Query() model?: string,
+    @Query() year?: string
+  ): Promise<ParsedVehicleUpload> {
+    if (!vin || vin.length !== 17) {
+      this.setStatus(400);
+      throw new Error('VIN must be 17 characters long');
+    }
+
+    const result = await VinService.validateVinData(vin, { make, model, year });
+    return result;
   }
 
   @Get('/{id}')

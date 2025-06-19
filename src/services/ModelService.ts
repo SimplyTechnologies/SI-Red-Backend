@@ -3,14 +3,7 @@ import { normalizeName } from '../utils/normalizers';
 
 class ModelService {
   async getAllModelsByMakeId(id: number) {
-    const models = await Model.findAll({
-      where: { make_id: id },
-    });
-
-    if (!models) {
-      throw new Error('Models not found');
-    }
-
+    const models = await Model.findAll({ where: { make_id: id } });
     return models;
   }
 

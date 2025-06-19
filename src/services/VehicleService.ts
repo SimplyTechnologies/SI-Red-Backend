@@ -19,6 +19,7 @@ import { ParsedVehicleUpload } from '../types/upload';
 import GeoService from './GeoService';
 import VinService from './VinService';
 import { parse } from 'csv-parse/sync';
+import { normalizeName } from '../utils/normalizers';
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -445,6 +446,8 @@ class VehicleService {
       };
       let vinData = null;
       let vinError = null;
+      const existing = await Vehicle.findOne({ where: { vin } });
+      const vinExists = !!existing;
 
       try {
         vinData = await VinService.decodeVinAndCreateIfNotExists(vin);
@@ -475,27 +478,62 @@ class VehicleService {
         );
       }
 
-      const allFieldsPresent =
-        vin && vinData?.make && vinData.model && vinData.year && coordinates && combinedLocation;
-      const excludeCondition = !(
-        !!allFieldsPresent &&
-        Object.keys(mismatch).length === 0 &&
-        vinError
-      );
       results.push({
         vin,
-        make: input.make ?? vinData?.make,
-        model: input.model ?? vinData?.model,
-        year: input.year ?? vinData?.year,
+        make: input.make?.trim() ? input.make : vinData?.make,
+        model: input.model?.trim() ? input.model : vinData?.model,
+        year: input.year?.trim() ? input.year : vinData?.year,
         coordinates,
         combinedLocation,
-        exclude: excludeCondition,
         mismatch: Object.keys(mismatch).length && !vinError ? mismatch : undefined,
         error: vinError,
+        vinExists,
       });
     }
 
     return results;
+  }
+
+  async validateMakeAndModel(
+    makeName: string,
+    modelName: string
+  ): Promise<{
+    makeMsg: string;
+    modelMsg: string;
+  }> {
+    let makeMsg = '';
+    let modelMsg = '';
+    const normalizedMake = normalizeName(makeName);
+    const normalizedModel = normalizeName(modelName);
+
+    const make = await Make.findOne({
+      where: {
+        name: {
+          [Op.iLike]: normalizedMake,
+        },
+      },
+    });
+
+    if (!make) {
+      makeMsg = 'Make not found';
+      modelMsg = 'Cannot validate model without a valid make';
+      return { makeMsg, modelMsg };
+    }
+
+    const model = await Model.findOne({
+      where: {
+        name: {
+          [Op.iLike]: normalizedModel,
+        },
+        make_id: make.id,
+      },
+    });
+
+    if (!model) {
+      modelMsg = 'Model not found or does not match the specified make';
+    }
+
+    return { makeMsg, modelMsg };
   }
 }
 
