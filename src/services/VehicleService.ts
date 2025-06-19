@@ -406,9 +406,9 @@ class VehicleService {
     if (!status) return 'Unknown';
     switch (status.toLowerCase()) {
       case 'in stock':
-        return 'Available';
+        return 'In Stock';
       case 'sold':
-        return 'Not Available';
+        return 'Sold';
       default:
         return 'Unknown';
     }
@@ -437,10 +437,10 @@ class VehicleService {
 
     // Create metadata lines
     const filters: string[] = [];
-    if (make) filters.push(`Make = ${make}`);
-    if (model?.length) filters.push(`Model = ${model.join(', ')}`);
-    if (availability) filters.push(`Availability = ${availability}`);
-    if (search) filters.push(`Search = "${search}"`);
+    if (make) filters.push(`Make: ${make}`);
+    if (model?.length) filters.push(`Model: ${model.join(', ')}`);
+    if (availability) filters.push(`Status: ${availability}`);
+    if (search) filters.push(`Search: "${search}"`);
 
     const filteredLine = filters.length > 0 ? `Filtered by: ${filters.join('; ')}` : 'Filtered by: None';
     const exportedLine = `Exported at: ${new Date().toLocaleString()}`;
@@ -460,9 +460,9 @@ class VehicleService {
         { key: 'model', header: 'Model' },
         { key: 'vin', header: 'VIN' },
         { key: 'year', header: 'Year' },
-        { key: 'combinedLocation', header: 'Combined Location' },
+        { key: 'combinedLocation', header: 'Location' },
         { key: 'location', header: 'Coordinates' },
-        { key: 'availability', header: 'Availability' },
+        { key: 'availability', header: 'Status' },
       ],
       cast: {
         string: (value: unknown): string =>
