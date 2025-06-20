@@ -3,6 +3,7 @@ import { Vehicle } from '../models/Vehicle.model';
 import { Op, Transaction } from 'sequelize';
 import { CreateOrUpdateCustomerRequest, CustomerResponse } from '../types/customer';
 import { Make, Model } from '../models';
+import { Document } from '../models/Document.model'; 
 
 class CustomerService {
   async getAllCustomers({
@@ -52,6 +53,14 @@ class CustomerService {
               ],
             },
           ],
+          
+        },
+        {
+          model: Document,
+          as: 'documents',
+          attributes: ['id', 'name', 'fileUrl', 'size', 'mimeType'],
+          where: { deletedAt: null },
+          required: false,
         },
       ],
     });
@@ -112,6 +121,34 @@ class CustomerService {
 
     return true;
   }
+
+     async getCustomerDocuments(customerId: string) {
+    return await Document.findAll({
+      where: { customerId, deletedAt: null },
+      attributes: ['id', 'name', 'fileUrl', 'size', 'mimeType'],
+    });
+  }
+
+   async uploadDocuments(customerId: string, files: Express.Multer.File[]) {
+    // Implement your storage logic here if needed
+    const uploaded = await Promise.all(
+      files.map(async (file) => {
+        // If you use S3 or other storage, upload and get fileUrl here
+        const fileUrl = `/uploads/${file.filename}`; // Example for local storage
+        return await Document.create({
+          customerId,
+          name: file.originalname,
+          fileUrl,
+          size: file.size,
+          mimeType: file.mimetype,
+        });
+      })
+    );
+    return uploaded;
+  }
 }
+
+
+
 
 export default new CustomerService();

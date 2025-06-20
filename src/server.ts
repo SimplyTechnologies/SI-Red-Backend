@@ -14,6 +14,8 @@ import { errorHandler } from './middlewares/errorHandler';
 import { cleanValidators, vehicleValidationRules } from './validations/vehicle.validation';
 import authMiddleware from './middlewares/authMiddleware';
 import { vinValidationRules } from './validations/vin.validation';
+import "./config/cloudinary";
+
 
 config();
 

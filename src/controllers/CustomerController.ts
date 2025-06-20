@@ -1,7 +1,10 @@
-import { Controller, Get, Route, Tags, Query, Delete, Path } from 'tsoa';
+import { Controller, Get, Route, Tags, Query, Delete, Path, Post, Security, Request, Middlewares
+} from 'tsoa';
 import CustomerService from '../services/CustomerService';
 import { CustomerResponse } from '../types/customer';
 import { CUSTOMERS_SEARCH } from '../constants/constants';
+import { Request as ExpressRequest } from 'express';
+import upload from '../middlewares/upload';
 
 @Route('customers')
 @Tags('Customer')
@@ -41,5 +44,50 @@ export class CustomerController extends Controller {
     }
 
     return { message: 'Customer deleted successfully' };
+  }
+
+   /**
+   * Get customer documents
+   * @param id Customer ID
+   */
+  @Get('/{id}/documents')
+  @Security('bearerAuth')
+  public async getCustomerDocuments(
+    @Path() id: string
+  ): Promise<Array<{
+    id: string;
+    name: string;
+    fileUrl: string;
+    size: number;
+    mimeType: string;
+  }>> {
+    const documents = await CustomerService.getCustomerDocuments(id);
+    return documents;
+  }
+
+  /**
+   * Upload documents for a customer
+   * @param id Customer ID
+   * @param documents Documents to upload (PDF, JPEG, PNG)
+   * @consumes multipart/form-data
+   */
+  @Post('/{id}/documents')
+  @Security('bearerAuth')
+  @Middlewares([upload.array('documents')])
+  public async uploadDocuments(
+    @Path() id: string,
+    @Request() req: ExpressRequest
+  ): Promise<{ message: string; documents: Array<{
+    id: string;
+    name: string;
+    fileUrl: string;
+  }> }> {
+    const files = req.files as Express.Multer.File[];
+    const documents = await CustomerService.uploadDocuments(id, files);
+    
+    return {
+      message: 'Documents uploaded successfully',
+      documents
+    };
   }
 }
