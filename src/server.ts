@@ -14,6 +14,7 @@ import { errorHandler } from './middlewares/errorHandler';
 import { cleanValidators, vehicleValidationRules } from './validations/vehicle.validation';
 import authMiddleware from './middlewares/authMiddleware';
 import { vinValidationRules } from './validations/vin.validation';
+import vehicleUploadRoute from './routes/vehicle-upload.route';
 
 config();
 
@@ -28,8 +29,10 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
+
 
 (async () => {
   await testDbConnection();
@@ -43,6 +46,18 @@ app.post(
     next();
   }
 );
+
+
+app.get(
+  '/vin',
+  vinValidationRules,
+  validateRequest,
+  (req: Request, res: Response, next: NextFunction) => {
+    next();
+  }
+);
+
+app.use(authMiddleware);
 
 app.post(
   '/vehicles',
@@ -62,16 +77,7 @@ app.patch(
   }
 );
 
-app.get(
-  '/vin',
-  vinValidationRules,
-  validateRequest,
-  (req: Request, res: Response, next: NextFunction) => {
-    next();
-  }
-);
-
-app.use(authMiddleware);
+app.use('/vehicles', vehicleUploadRoute);
 
 RegisterRoutes(app);
 

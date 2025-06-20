@@ -6,14 +6,14 @@ import {
   PlainVehicleLocation,
   BulkVehicleInput,
 } from '../types/vehicle';
-import { Vehicle, Model, Make, Customer } from '../models';
+import { Vehicle, Model, Make, Customer, VehicleImage } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize, UniqueConstraintError } from 'sequelize';
 import CustomerService from './CustomerService';
 import { CreateOrUpdateCustomerRequest } from '../types/customer';
 import { sequelize } from '../config/db';
 import createHttpError from 'http-errors';
-import { Readable } from 'stream';
+import { Readable, PassThrough } from 'stream';
 import { stringify } from 'csv-stringify';
 import { Options as StringifyOptions } from 'csv-stringify/sync';
 import { ParsedVehicleUpload } from '../types/upload';
@@ -21,6 +21,8 @@ import GeoService from './GeoService';
 import VinService from './VinService';
 import { parse } from 'csv-parse/sync';
 import { normalizeName } from '../utils/normalizers';
+import cloudinary from '../config/cloudinary';
+import { extractPublicIdFromUrl } from '../utils/cloudinary';
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -98,19 +100,17 @@ class VehicleService {
     }
 
     const whereClause = {
-      ...searchClause,
       ...(availability && {
         status: { [Op.iLike]: availability },
       }),
     };
 
     const vehicles = await Vehicle.findAll({
-      where: whereClause,
       include: [
         {
           model: Model,
           as: 'model',
-          required: !!(search || make || model?.length),
+          required: true,
           attributes: ['name'],
           where: model?.length
             ? {
@@ -121,7 +121,7 @@ class VehicleService {
             {
               model: Make,
               as: 'make',
-              required: !!make,
+              required: true,
               attributes: ['name'],
               where: make
                 ? {
@@ -131,7 +131,13 @@ class VehicleService {
             },
           ],
         },
+        {
+          model: VehicleImage,
+          as: 'images',
+          attributes: ['id', 'image_url'],
+        },
       ],
+      ...(searchClause && { where: { ...whereClause, ...searchClause } }),
       limit,
       offset,
       order: [['createdAt', 'DESC']],
@@ -146,8 +152,24 @@ class VehicleService {
     });
   }
 
-  async getVehicleMapPoints(search?: string) {
-    const whereClause = search ? this.getWhereClauseSearch(search) : {};
+  async getVehicleMapPoints({
+    search,
+    make,
+    model,
+    availability,
+  }: Pick<GetVehiclesOptions, 'search' | 'make' | 'model' | 'availability'>) {
+    const searchClause = search ? this.getWhereClauseSearch(search) : {};
+
+    if (model?.length && !make) {
+      throw new createHttpError.BadRequest('Make must be selected when filtering by model.');
+    }
+
+    const whereClause = {
+      ...searchClause,
+      ...(availability && {
+        status: { [Op.iLike]: availability },
+      }),
+    };
 
     const vehicles = await Vehicle.findAll({
       attributes: ['id', 'location'],
@@ -156,13 +178,24 @@ class VehicleService {
         {
           model: Model,
           as: 'model',
-          required: !!search,
+          required: !!(search || make || model?.length),
           attributes: [],
+          where: model?.length
+            ? {
+                name: { [Op.in]: model },
+              }
+            : undefined,
           include: [
             {
               model: Make,
               as: 'make',
+              required: !!make,
               attributes: [],
+              where: make
+                ? {
+                    name: { [Op.iLike]: make },
+                  }
+                : undefined,
             },
           ],
         },
@@ -192,17 +225,44 @@ class VehicleService {
           as: 'customer',
           attributes: ['id', 'firstName', 'lastName', 'email', 'phoneNumber'],
         },
+        {
+          model: VehicleImage,
+          as: 'images',
+          attributes: ['id', 'image_url'],
+        },
       ],
     });
   }
 
   async deleteVehicle(id: string) {
-    const vehicle = await Vehicle.findByPk(id);
+    const vehicle = await Vehicle.findByPk(id, {
+      include: [{ model: VehicleImage, as: 'images' }],
+    });
+
     if (!vehicle) {
       throw new Error('Vehicle not found');
     }
+
+    const typedVehicle = vehicle as Vehicle & { images?: VehicleImage[] };
+
+    if (typedVehicle.images && typedVehicle.images.length > 0) {
+      for (const img of typedVehicle.images) {
+        const publicId = extractPublicIdFromUrl(img.image_url);
+        if (publicId) {
+          try {
+            await cloudinary.uploader.destroy(publicId);
+          } catch (error) {
+            console.error(`❌ Failed to delete Cloudinary image ${publicId}`, error);
+          }
+        }
+      }
+    }
+
+    await VehicleImage.destroy({ where: { vehicle_id: id } });
+
     await vehicle.destroy();
-    return { message: 'Vehicle deleted successfully' };
+
+    return { message: 'Vehicle and associated images deleted successfully' };
   }
 
   async updateVehicle(id: string, updateData: Partial<VehicleInput>) {
@@ -283,6 +343,9 @@ class VehicleService {
   }
   async getVehiclesForCSV(
     search?: string,
+    make?: string,
+    model?: string[],
+    availability?: string,
     userId?: string,
     isFavorites = false
   ): Promise<VehicleCSVData[]> {
@@ -299,6 +362,7 @@ class VehicleService {
       const vehicles = await Vehicle.findAll({
         where: {
           ...whereClause,
+          ...(availability && { status: availability }),
           ...(isFavorites &&
             favoriteIds.size > 0 && {
               id: { [Op.in]: Array.from(favoriteIds) },
@@ -308,9 +372,22 @@ class VehicleService {
           {
             model: Model,
             as: 'model',
-            required: !!search,
+            required: !!search || !!model || !!make,
             attributes: ['name'],
-            include: [{ model: Make, as: 'make', required: false, attributes: ['name'] }],
+            where: {
+              ...(model && {
+                name: Array.isArray(model) ? { [Op.in]: model } : model,
+              }),
+            },
+            include: [
+              {
+                model: Make,
+                as: 'make',
+                required: !!make,
+                attributes: ['name'],
+                where: make ? { name: make } : undefined,
+              },
+            ],
           },
         ],
         attributes: ['vin', 'year', 'street', 'city', 'state', 'country', 'location', 'status'],
@@ -368,9 +445,9 @@ class VehicleService {
     if (!status) return 'Unknown';
     switch (status.toLowerCase()) {
       case 'in stock':
-        return 'Available';
+        return 'In Stock';
       case 'sold':
-        return 'Not Available';
+        return 'Sold';
       default:
         return 'Unknown';
     }
@@ -378,6 +455,9 @@ class VehicleService {
 
   async generateCSVStream(
     search?: string,
+    make?: string,
+    model?: string[],
+    availability?: string,
     userId?: string,
     type?: 'vehicles' | 'favorites'
   ): Promise<{
@@ -387,13 +467,32 @@ class VehicleService {
     try {
       const vehicles =
         type === 'favorites'
-          ? await this.getVehiclesForCSV(search, userId, true)
-          : await this.getVehiclesForCSV(search);
+          ? await this.getVehiclesForCSV(search, make, model, availability, userId, true)
+          : await this.getVehiclesForCSV(search, make, model, availability);
 
       const date = new Date().toISOString().split('T')[0];
       const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
       const filename = `${prefix}_${date}.csv`;
 
+      // Create metadata lines
+      const filters: string[] = [];
+      if (make) filters.push(`Make: ${make}`);
+      if (model?.length) filters.push(`Model: ${model.join(', ')}`);
+      if (availability) filters.push(`Status: ${availability}`);
+      if (search) filters.push(`Search: "${search}"`);
+
+      const filteredLine =
+        filters.length > 0 ? `Filtered by: ${filters.join('; ')}` : 'Filtered by: None';
+      const exportedLine = `Exported at: ${new Date().toLocaleString()}`;
+
+      // Create header stream manually
+      const headerStream = new PassThrough();
+      headerStream.write(`"${filteredLine}"\n`);
+      headerStream.write(`"${exportedLine}"\n`);
+      headerStream.write('\n'); // Blank line
+      headerStream.end();
+
+      // Setup CSV options
       const options: StringifyOptions = {
         header: true,
         columns: [
@@ -401,9 +500,9 @@ class VehicleService {
           { key: 'model', header: 'Model' },
           { key: 'vin', header: 'VIN' },
           { key: 'year', header: 'Year' },
-          { key: 'combinedLocation', header: 'Combined Location' },
+          { key: 'combinedLocation', header: 'Location' },
           { key: 'location', header: 'Coordinates' },
-          { key: 'availability', header: 'Availability' },
+          { key: 'availability', header: 'Status' },
         ],
         cast: {
           string: (value: unknown): string =>
@@ -414,8 +513,16 @@ class VehicleService {
         record_delimiter: '\n',
       };
 
-      const stream = Readable.from(vehicles).pipe(stringify(options));
-      return { stream, filename };
+      const dataStream = Readable.from(vehicles).pipe(stringify(options));
+
+      // Combine both header and data streams
+      const combinedStream = new PassThrough();
+      headerStream.pipe(combinedStream, { end: false });
+      headerStream.on('end', () => {
+        dataStream.pipe(combinedStream);
+      });
+
+      return { stream: combinedStream, filename };
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Failed to generate CSV file:', {
@@ -426,7 +533,6 @@ class VehicleService {
       throw new createHttpError.InternalServerError('Failed to generate CSV file');
     }
   }
-
   async parseAndValidateCSV(buffer: Buffer): Promise<ParsedVehicleUpload[]> {
     const records = parse(buffer, {
       columns: true,
