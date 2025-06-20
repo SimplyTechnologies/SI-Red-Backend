@@ -5,12 +5,6 @@ export type ParsedVehicleUpload = {
   year?: string;
   combinedLocation?: string;
   coordinates?: string;
-  // exclude: boolean;
-  mismatch?: {
-    make?: { original: string; actual: string };
-    model?: { original: string; actual: string };
-    year?: { original: string; actual: string | undefined };
-  };
   error?: string | null;
-  vinExists: boolean;
+  vinExists?: boolean;
 };

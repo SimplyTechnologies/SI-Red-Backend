@@ -4,6 +4,7 @@ import {
   VehicleResponse,
   VehicleCSVData,
   PlainVehicleLocation,
+  BulkVehicleInput,
 } from '../types/vehicle';
 import { Vehicle, Model, Make, Customer } from '../models';
 import FavoriteService from './FavoriteService';
@@ -444,6 +445,7 @@ class VehicleService {
         combinedLocation: record['Combined Location'],
         coordinates: record['Coordinates'],
       };
+
       let vinData = null;
       let vinError = null;
       const existing = await Vehicle.findOne({ where: { vin } });
@@ -453,16 +455,6 @@ class VehicleService {
         vinData = await VinService.decodeVinAndCreateIfNotExists(vin);
       } catch (err) {
         vinError = (err as Error).message ?? 'VIN lookup failed';
-      }
-      const mismatch: ParsedVehicleUpload['mismatch'] = {};
-      if (input.make && input.make.toLowerCase() !== vinData?.make.toLowerCase()) {
-        mismatch.make = { original: input.make, actual: vinData?.make };
-      }
-      if (input.model && input.model.toLowerCase() !== vinData?.model.toLowerCase()) {
-        mismatch.model = { original: input.model, actual: vinData?.model };
-      }
-      if (input.year && input.year !== vinData?.year) {
-        mismatch.year = { original: input.year, actual: vinData?.year };
       }
 
       let coordinates = input.coordinates;
@@ -480,12 +472,11 @@ class VehicleService {
 
       results.push({
         vin,
-        make: input.make?.trim() ? input.make : vinData?.make,
-        model: input.model?.trim() ? input.model : vinData?.model,
-        year: input.year?.trim() ? input.year : vinData?.year,
+        make: input.make?.trim() || vinData?.make,
+        model: input.model?.trim() || vinData?.model,
+        year: input.year?.trim() || vinData?.year,
         coordinates,
         combinedLocation,
-        mismatch: Object.keys(mismatch).length && !vinError ? mismatch : undefined,
         error: vinError,
         vinExists,
       });
@@ -530,10 +521,66 @@ class VehicleService {
     });
 
     if (!model) {
-      modelMsg = 'Model not found or does not match the specified make';
+      modelMsg = 'Model does not match the specified make';
     }
 
     return { makeMsg, modelMsg };
+  }
+
+  async bulkCreateVehicles(data: BulkVehicleInput[], userId: string) {
+    const vehiclesToCreate = [];
+
+    for (const row of data) {
+      const { make, model, vin, year, coordinates, combinedLocation } = row;
+
+      if (!make || !model || !vin || !year || !coordinates || !combinedLocation) {
+        throw new createHttpError.BadRequest('Missing required vehicle fields.');
+      }
+
+      const foundMake = await Make.findOne({
+        where: { name: { [Op.iLike]: make } },
+      });
+
+      if (!foundMake) {
+        throw new createHttpError.BadRequest(`Make '${make}' not found.`);
+      }
+
+      const foundModel = await Model.findOne({
+        where: {
+          name: { [Op.iLike]: model },
+          make_id: foundMake.id,
+        },
+      });
+
+      if (!foundModel) {
+        throw new createHttpError.BadRequest(
+          `Model '${model}' not found or does not belong to make '${make}'.`
+        );
+      }
+
+      const street = combinedLocation;
+      const city = '';
+      const state = '';
+      const country = '';
+      const zipcode = '';
+
+      vehiclesToCreate.push({
+        model_id: foundModel.id,
+        vin,
+        year,
+        user_id: userId,
+        street,
+        city,
+        state,
+        country,
+        zipcode,
+        status: 'in stock',
+        location: coordinates,
+        imported: true,
+      });
+    }
+
+    return await Vehicle.bulkCreate(vehiclesToCreate);
   }
 }
 

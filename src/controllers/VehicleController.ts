@@ -15,7 +15,7 @@ import {
   Security,
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
-import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
+import { BulkVehicleInput, VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { LIMIT, PAGE } from '../constants/constants';
@@ -164,5 +164,17 @@ export class VehicleController extends Controller {
     const file = req.file;
     if (!file) throw new Error('File is required');
     return await VehicleService.parseAndValidateCSV(file.buffer);
+  }
+
+  @Post('/bulk')
+  @SuccessResponse('201', 'Created')
+  public async bulkCreateVehicles(
+    @Body() body: { vehicles: BulkVehicleInput[] },
+    @Request() req: AuthenticatedRequest
+  ): Promise<VehicleResponse[]> {
+    const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
+    const created = await VehicleService.bulkCreateVehicles(body.vehicles, userId);
+    this.setStatus(201);
+    return created.map((v) => v.get({ plain: true }));
   }
 }

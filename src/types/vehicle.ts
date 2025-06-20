@@ -18,7 +18,7 @@ export interface GetVehiclesOptions {
   limit: number;
   search?: string;
   make?: string;
-  model?: string[]; 
+  model?: string[];
   availability?: string;
 }
 
@@ -96,4 +96,14 @@ export interface PlainVehicleLocation {
   city?: string;
   state?: string;
   country?: string;
+}
+
+export interface BulkVehicleInput {
+  make: string;
+  model: string;
+  vin: string;
+  year: string;
+  combinedLocation: string;
+  coordinates: string;
+  imported?: boolean;
 }

@@ -51,25 +51,9 @@ class VinService {
       vinData = await this.decodeVinAndCreateIfNotExists(vin);
     } catch {}
 
-    const mismatch: ParsedVehicleUpload['mismatch'] = {};
-
     const cleanedMake = input.make?.trim() || undefined;
     const cleanedModel = input.model?.trim() || undefined;
     const cleanedYear = input.year?.trim() || undefined;
-    console.log(typeof cleanedMake);
-    if (cleanedMake && vinData?.make && cleanedMake.toLowerCase() !== vinData.make.toLowerCase()) {
-      mismatch.make = { original: cleanedMake, actual: vinData.make };
-    }
-    if (
-      cleanedModel &&
-      vinData?.model &&
-      cleanedModel.toLowerCase() !== vinData.model.toLowerCase()
-    ) {
-      mismatch.model = { original: cleanedModel, actual: vinData.model };
-    }
-    if (cleanedYear && vinData?.year && cleanedYear !== vinData.year) {
-      mismatch.year = { original: cleanedYear, actual: vinData.year };
-    }
 
     return {
       vin,
@@ -78,8 +62,6 @@ class VinService {
       year: cleanedYear || vinData?.year,
       coordinates: undefined,
       combinedLocation: undefined,
-      // exclude: !!vinError || Object.keys(mismatch).length > 0,
-      mismatch: Object.keys(mismatch).length > 0 && !vinError ? mismatch : undefined,
       error: vinError,
       vinExists,
     };
