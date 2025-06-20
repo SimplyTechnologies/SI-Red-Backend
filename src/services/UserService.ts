@@ -1,8 +1,8 @@
 import { User } from '../models/User.model';
 import { sendVerificationEmail } from '../utils/email/sendVerificationEmail';
-import { CreateUserDTO, UpdateUserDTO, UpdateUserResponse } from '../types/user';
+import { CreateUserDTO, UpdateUserDTO, UpdateUserResponse, UserResponse } from '../types/user';
 import createError from 'http-errors';
-import { Op, Sequelize } from 'sequelize';
+import { Op, Order, Sequelize } from 'sequelize';
 import { GetUsersOptions } from '../types/user';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -43,8 +43,13 @@ export class UserService {
     page = PAGE,
     limit = LIMIT,
     search,
+    sortBy,
+    sortOrder,
     excludeUserId,
-  }: GetUsersOptions & { excludeUserId?: string }) {
+  }: GetUsersOptions & { excludeUserId?: string }): Promise<{
+    total: number;
+    users: UserResponse[];
+  }> {
     const offset = (page - 1) * limit;
 
     const whereClause: Record<string, unknown> = {
@@ -56,6 +61,8 @@ export class UserService {
               [Op.iLike]: `%${search}%`,
             }
           ),
+          { email: { [Op.iLike]: `%${search}%` } },
+          { phoneNumber: { [Op.iLike]: `%${search}%` } },
         ],
       }),
       ...(excludeUserId && {
@@ -63,16 +70,30 @@ export class UserService {
       }),
     };
 
+    let order: Order = [['createdAt', 'DESC']];
+
+    if (sortBy === 'name') {
+      order = [[Sequelize.literal(`"firstName" || ' ' || "lastName"`), sortOrder || 'ASC']];
+    } else if (sortBy === 'status') {
+      order = [[Sequelize.cast(Sequelize.col('isVerified'), 'int'), sortOrder || 'ASC']];
+    } else if (
+      ['firstName', 'lastName', 'email', 'phoneNumber', 'createdAt'].includes(sortBy || '')
+    ) {
+      order = [[Sequelize.col(sortBy!), sortOrder || 'ASC']];
+    }
+
     const { count, rows } = await User.findAndCountAll({
       where: whereClause,
       limit,
       offset,
-      order: [['createdAt', 'DESC']],
+      order,
     });
+
+    const users: UserResponse[] = rows.map((user) => user.get({ plain: true }));
 
     return {
       total: count,
-      users: rows.map((user) => user.get({ plain: true })),
+      users,
     };
   }
 

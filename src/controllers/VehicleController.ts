@@ -17,16 +17,20 @@ import {
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
 import { Request as ExpressRequest } from 'express';
-import { VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
+import { BulkVehicleInput, VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { LIMIT, PAGE } from '../constants/constants';
 import { customerValidationRules } from '../validations/customer.validation';
 import { validateRequest } from '../middlewares/validateRequest';
-import upload from '../middlewares/upload'; 
+// import upload from '../middlewares/upload'; 
+import { ParsedVehicleUpload } from '../types/upload';
+import { upload } from '../middlewares/multerMiddleware';
+import VinService from '../services/VinService';
 
 @Route('vehicles')
 @Tags('Vehicle')
+@Security('bearerAuth')
 export class VehicleController extends Controller {
   @Post('/')
   @SuccessResponse('201', 'Created')
@@ -41,7 +45,6 @@ export class VehicleController extends Controller {
   }
 
   @Get('/')
-  @Security('bearerAuth')
   public async getVehicles(
     @Request() req: AuthenticatedRequest,
     @Query() page: number = PAGE,
@@ -67,15 +70,17 @@ export class VehicleController extends Controller {
   }
 
   @Get('/download-csv')
-  @Security('bearerAuth')
   public async downloadCSV(
     @Request() req: AuthenticatedRequest,
     @Query() search?: string,
+    @Query() make?: string,
+    @Query() model?: string[],
+    @Query() availability?: string,
     @Query() type?: 'vehicles' | 'favorites'
   ): Promise<NodeJS.ReadableStream> {
     try {
       const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
-      const { stream, filename } = await VehicleService.generateCSVStream(search, userId, type);
+      const { stream, filename } = await VehicleService.generateCSVStream(search, make, model, availability, userId, type);
 
       this.setHeader('Content-Type', 'text/csv; charset=UTF-8');
       this.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -99,6 +104,30 @@ export class VehicleController extends Controller {
     @Query() availability?: string
   ): Promise<VehicleMapPoint[]> {
     return await VehicleService.getVehicleMapPoints({ search, make, model, availability });
+  }
+
+  @Get('/validate-make-model')
+  public async validateMakeModel(
+    @Query() makeName: string,
+    @Query() modelName: string
+  ): Promise<{ makeMsg: string; modelMsg: string }> {
+    return VehicleService.validateMakeAndModel(makeName, modelName);
+  }
+
+  @Get('/validate-vin')
+  public async validateVin(
+    @Query() vin: string,
+    @Query() make?: string,
+    @Query() model?: string,
+    @Query() year?: string
+  ): Promise<ParsedVehicleUpload> {
+    if (!vin || vin.length !== 17) {
+      this.setStatus(400);
+      throw new Error('VIN must be 17 characters long');
+    }
+
+    const result = await VinService.validateVinData(vin, { make, model, year });
+    return result;
   }
 
   @Get('/{id}')
@@ -156,6 +185,27 @@ export class VehicleController extends Controller {
   @Delete('/{id}')
   public async deleteVehicle(@Path() id: string): Promise<{ message: string }> {
     return await VehicleService.deleteVehicle(id);
+  }
+
+  @Post('/upload-csv-preview')
+  @Middlewares([upload.single('file')])
+  @SuccessResponse('200', 'Parsed and validated')
+  public async uploadCSVPreview(@Request() req: Express.Request): Promise<ParsedVehicleUpload[]> {
+    const file = req.file;
+    if (!file) throw new Error('File is required');
+    return await VehicleService.parseAndValidateCSV(file.buffer);
+  }
+
+  @Post('/bulk')
+  @SuccessResponse('201', 'Created')
+  public async bulkCreateVehicles(
+    @Body() body: { vehicles: BulkVehicleInput[] },
+    @Request() req: AuthenticatedRequest
+  ): Promise<VehicleResponse[]> {
+    const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
+    const created = await VehicleService.bulkCreateVehicles(body.vehicles, userId);
+    this.setStatus(201);
+    return created.map((v) => v.get({ plain: true }));
   }
 }
 

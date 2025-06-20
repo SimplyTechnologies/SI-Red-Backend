@@ -19,7 +19,6 @@ import { UpdateUserDTO, UpdateUserResponse, UserResponse } from '../types/user';
 import { CreateUserDTO } from '../types/user';
 import { USER_ROLE } from '../constants/constants';
 import { LIMIT, PAGE } from '../constants/constants';
-import { UserAttributes } from '../types/user';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { validateUpdateUser } from '../validations/updateUser.validation';
@@ -57,10 +56,19 @@ export class UserController extends Controller {
     @Request() req: AuthenticatedRequest,
     @Query() page: number = PAGE,
     @Query() limit: number = LIMIT,
-    @Query() search?: string
-  ): Promise<{ total: number; users: UserAttributes[] }> {
+    @Query() search?: string,
+    @Query() sortBy?: string,
+    @Query() sortOrder?: 'ASC' | 'DESC'
+  ): Promise<{ total: number; users: UserResponse[] }> {
     const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
-    return await this.userService.getAllUsers({ page, limit, search, excludeUserId: userId });
+    return await this.userService.getAllUsers({
+      page,
+      limit,
+      search,
+      sortBy,
+      sortOrder,
+      excludeUserId: userId,
+    });
   }
 
   @Delete('{id}')

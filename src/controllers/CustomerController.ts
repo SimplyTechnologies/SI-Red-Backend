@@ -4,7 +4,7 @@ import CustomerService from '../services/CustomerService';
 import { CustomerResponse } from '../types/customer';
 import { CUSTOMERS_SEARCH } from '../constants/constants';
 import { Request as ExpressRequest } from 'express';
-import upload from '../middlewares/upload';
+import { upload } from '../middlewares/upload';
 
 @Route('customers')
 @Tags('Customer')
@@ -25,9 +25,17 @@ export class CustomerController extends Controller {
   public async getAllCustomers(
     @Query() page: number = CUSTOMERS_SEARCH.PAGE_NUMBER,
     @Query() limit: number = CUSTOMERS_SEARCH.LIMIT,
-    @Query() search?: string
+    @Query() search?: string,
+    @Query() sortBy?: string,
+    @Query() sortOrder?: 'ASC' | 'DESC'
   ): Promise<{ total: number; customers: CustomerResponse[] }> {
-    const { total, customers } = await CustomerService.getAllCustomers({ page, limit, search });
+    const { total, customers } = await CustomerService.getAllCustomers({
+      page,
+      limit,
+      search,
+      sortBy,
+      sortOrder,
+    });
     return {
       total,
       customers,

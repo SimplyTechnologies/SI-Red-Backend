@@ -1,6 +1,6 @@
 import { Customer } from '../models/Customer.model';
 import { Vehicle } from '../models/Vehicle.model';
-import { Op, Transaction } from 'sequelize';
+import { Op, Order, Transaction } from 'sequelize';
 import { CreateOrUpdateCustomerRequest, CustomerResponse } from '../types/customer';
 import { Make, Model } from '../models';
 import { Document } from '../models/Document.model'; 
@@ -10,10 +10,14 @@ class CustomerService {
     page,
     limit,
     search,
+    sortBy,
+    sortOrder,
   }: {
     page: number;
     limit: number;
     search?: string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
   }): Promise<{ total: number; customers: CustomerResponse[] }> {
     const offset = (page - 1) * limit;
 
@@ -27,13 +31,26 @@ class CustomerService {
         }
       : undefined;
 
+    let order: Order = [['createdAt', 'DESC']]; // default
+
+    if (sortBy) {
+      if (sortBy === 'name') {
+        order = [
+          [Customer.sequelize!.literal(`"firstName" || ' ' || "lastName"`), sortOrder || 'ASC'],
+        ];
+      } else if (sortBy === 'assignedDate') {
+        order = [[{ model: Vehicle, as: 'vehicles' }, 'assignedDate', sortOrder || 'ASC']];
+      } else {
+        order = [[sortBy, sortOrder || 'ASC']];
+      }
+    }
     const count = await Customer.count({ where: whereClause });
 
     const rows = await Customer.findAll({
       limit,
       offset,
-      order: [['createdAt', 'DESC']],
       where: whereClause,
+      order,
       include: [
         {
           model: Vehicle,
