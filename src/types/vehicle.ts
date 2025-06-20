@@ -103,3 +103,13 @@ export interface PlainVehicleLocation {
   state?: string;
   country?: string;
 }
+
+export interface BulkVehicleInput {
+  make: string;
+  model: string;
+  vin: string;
+  year: string;
+  combinedLocation: string;
+  coordinates: string;
+  imported?: boolean;
+}

@@ -1,10 +1,11 @@
-import { Controller, Get, Route, Tags, Path, Query } from 'tsoa';
+import { Controller, Get, Route, Tags, Path, Query, Security } from 'tsoa';
 import MakeService from '../services/MakeService';
 import { Make } from '../models';
 import { MakeResponse } from '../types/make';
 
 @Route('makes')
 @Tags('Make')
+@Security('bearerAuth')
 export class MakeController extends Controller {
   @Get('/')
   public async getAllMakes(): Promise<MakeResponse[]> {

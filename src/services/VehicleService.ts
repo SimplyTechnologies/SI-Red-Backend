@@ -4,6 +4,7 @@ import {
   VehicleResponse,
   VehicleCSVData,
   PlainVehicleLocation,
+  BulkVehicleInput,
 } from '../types/vehicle';
 import { Vehicle, Model, Make, Customer, VehicleImage } from '../models';
 import FavoriteService from './FavoriteService';
@@ -15,6 +16,11 @@ import createHttpError from 'http-errors';
 import { Readable, PassThrough } from 'stream';
 import { stringify } from 'csv-stringify';
 import { Options as StringifyOptions } from 'csv-stringify/sync';
+import { ParsedVehicleUpload } from '../types/upload';
+import GeoService from './GeoService';
+import VinService from './VinService';
+import { parse } from 'csv-parse/sync';
+import { normalizeName } from '../utils/normalizers';
 import cloudinary from '../config/cloudinary';
 import { extractPublicIdFromUrl } from '../utils/cloudinary';
 
@@ -448,84 +454,240 @@ class VehicleService {
   }
 
   async generateCSVStream(
-  search?: string,
-  make?: string,
-  model?: string[],
-  availability?: string,
-  userId?: string,
-  type?: 'vehicles' | 'favorites'
-): Promise<{
-  stream: NodeJS.ReadableStream;
-  filename: string;
-}> {
-  try {
-    const vehicles =
-      type === 'favorites'
-        ? await this.getVehiclesForCSV(search, make, model, availability, userId, true)
-        : await this.getVehiclesForCSV(search, make, model, availability);
+    search?: string,
+    make?: string,
+    model?: string[],
+    availability?: string,
+    userId?: string,
+    type?: 'vehicles' | 'favorites'
+  ): Promise<{
+    stream: NodeJS.ReadableStream;
+    filename: string;
+  }> {
+    try {
+      const vehicles =
+        type === 'favorites'
+          ? await this.getVehiclesForCSV(search, make, model, availability, userId, true)
+          : await this.getVehiclesForCSV(search, make, model, availability);
 
-    const date = new Date().toISOString().split('T')[0];
-    const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
-    const filename = `${prefix}_${date}.csv`;
+      const date = new Date().toISOString().split('T')[0];
+      const prefix = type === 'favorites' ? 'favorite-vehicles' : 'vehicles';
+      const filename = `${prefix}_${date}.csv`;
 
-    // Create metadata lines
-    const filters: string[] = [];
-    if (make) filters.push(`Make: ${make}`);
-    if (model?.length) filters.push(`Model: ${model.join(', ')}`);
-    if (availability) filters.push(`Status: ${availability}`);
-    if (search) filters.push(`Search: "${search}"`);
+      // Create metadata lines
+      const filters: string[] = [];
+      if (make) filters.push(`Make: ${make}`);
+      if (model?.length) filters.push(`Model: ${model.join(', ')}`);
+      if (availability) filters.push(`Status: ${availability}`);
+      if (search) filters.push(`Search: "${search}"`);
 
-    const filteredLine = filters.length > 0 ? `Filtered by: ${filters.join('; ')}` : 'Filtered by: None';
-    const exportedLine = `Exported at: ${new Date().toLocaleString()}`;
+      const filteredLine =
+        filters.length > 0 ? `Filtered by: ${filters.join('; ')}` : 'Filtered by: None';
+      const exportedLine = `Exported at: ${new Date().toLocaleString()}`;
 
-    // Create header stream manually
-    const headerStream = new PassThrough();
-    headerStream.write(`"${filteredLine}"\n`);
-    headerStream.write(`"${exportedLine}"\n`);
-    headerStream.write('\n'); // Blank line
-    headerStream.end();
+      // Create header stream manually
+      const headerStream = new PassThrough();
+      headerStream.write(`"${filteredLine}"\n`);
+      headerStream.write(`"${exportedLine}"\n`);
+      headerStream.write('\n'); // Blank line
+      headerStream.end();
 
-    // Setup CSV options
-    const options: StringifyOptions = {
-      header: true,
-      columns: [
-        { key: 'make', header: 'Make' },
-        { key: 'model', header: 'Model' },
-        { key: 'vin', header: 'VIN' },
-        { key: 'year', header: 'Year' },
-        { key: 'combinedLocation', header: 'Location' },
-        { key: 'location', header: 'Coordinates' },
-        { key: 'availability', header: 'Status' },
-      ],
-      cast: {
-        string: (value: unknown): string =>
-          typeof value === 'string' ? value.replace(/"/g, '""') : String(value),
-      },
-      quoted: true,
-      quoted_empty: true,
-      record_delimiter: '\n',
-    };
+      // Setup CSV options
+      const options: StringifyOptions = {
+        header: true,
+        columns: [
+          { key: 'make', header: 'Make' },
+          { key: 'model', header: 'Model' },
+          { key: 'vin', header: 'VIN' },
+          { key: 'year', header: 'Year' },
+          { key: 'combinedLocation', header: 'Location' },
+          { key: 'location', header: 'Coordinates' },
+          { key: 'availability', header: 'Status' },
+        ],
+        cast: {
+          string: (value: unknown): string =>
+            typeof value === 'string' ? value.replace(/"/g, '""') : String(value),
+        },
+        quoted: true,
+        quoted_empty: true,
+        record_delimiter: '\n',
+      };
 
-    const dataStream = Readable.from(vehicles).pipe(stringify(options));
+      const dataStream = Readable.from(vehicles).pipe(stringify(options));
 
-    // Combine both header and data streams
-    const combinedStream = new PassThrough();
-    headerStream.pipe(combinedStream, { end: false });
-    headerStream.on('end', () => {
-      dataStream.pipe(combinedStream);
+      // Combine both header and data streams
+      const combinedStream = new PassThrough();
+      headerStream.pipe(combinedStream, { end: false });
+      headerStream.on('end', () => {
+        dataStream.pipe(combinedStream);
+      });
+
+      return { stream: combinedStream, filename };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Failed to generate CSV file:', {
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        });
+      }
+      throw new createHttpError.InternalServerError('Failed to generate CSV file');
+    }
+  }
+  async parseAndValidateCSV(buffer: Buffer): Promise<ParsedVehicleUpload[]> {
+    const records = parse(buffer, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
     });
 
-    return { stream: combinedStream, filename };
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('Failed to generate CSV file:', {
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    const results: ParsedVehicleUpload[] = [];
+
+    for (const record of records) {
+      const vin = record['VIN'];
+      const input = {
+        make: record['Make'],
+        model: record['Model'],
+        year: record['Year'],
+        combinedLocation: record['Combined Location'],
+        coordinates: record['Coordinates'],
+      };
+
+      let vinData = null;
+      let vinError = null;
+      const existing = await Vehicle.findOne({ where: { vin } });
+      const vinExists = !!existing;
+
+      try {
+        vinData = await VinService.decodeVinAndCreateIfNotExists(vin);
+      } catch (err) {
+        vinError = (err as Error).message ?? 'VIN lookup failed';
+      }
+
+      let coordinates = input.coordinates;
+      let combinedLocation = input.combinedLocation;
+
+      if (!coordinates && combinedLocation) {
+        coordinates = await GeoService.getCoordinatesFromAddress(combinedLocation);
+      } else if (!combinedLocation && coordinates) {
+        const [lat, lng] = coordinates.split(',');
+        combinedLocation = await GeoService.getAddressFromCoordinates(
+          parseFloat(lat),
+          parseFloat(lng)
+        );
+      }
+
+      results.push({
+        vin,
+        make: input.make?.trim() || vinData?.make,
+        model: input.model?.trim() || vinData?.model,
+        year: input.year?.trim() || vinData?.year,
+        coordinates,
+        combinedLocation,
+        error: vinError,
+        vinExists,
       });
     }
-    throw new createHttpError.InternalServerError('Failed to generate CSV file');
+
+    return results;
   }
-}
+
+  async validateMakeAndModel(
+    makeName: string,
+    modelName: string
+  ): Promise<{
+    makeMsg: string;
+    modelMsg: string;
+  }> {
+    let makeMsg = '';
+    let modelMsg = '';
+    const normalizedMake = normalizeName(makeName);
+    const normalizedModel = normalizeName(modelName);
+
+    const make = await Make.findOne({
+      where: {
+        name: {
+          [Op.iLike]: normalizedMake,
+        },
+      },
+    });
+
+    if (!make) {
+      makeMsg = 'Make not found';
+      modelMsg = 'Cannot validate model without a valid make';
+      return { makeMsg, modelMsg };
+    }
+
+    const model = await Model.findOne({
+      where: {
+        name: {
+          [Op.iLike]: normalizedModel,
+        },
+        make_id: make.id,
+      },
+    });
+
+    if (!model) {
+      modelMsg = 'Model does not match the specified make';
+    }
+
+    return { makeMsg, modelMsg };
+  }
+
+  async bulkCreateVehicles(data: BulkVehicleInput[], userId: string) {
+    const vehiclesToCreate = [];
+
+    for (const row of data) {
+      const { make, model, vin, year, coordinates, combinedLocation } = row;
+
+      if (!make || !model || !vin || !year || !coordinates || !combinedLocation) {
+        throw new createHttpError.BadRequest('Missing required vehicle fields.');
+      }
+
+      const foundMake = await Make.findOne({
+        where: { name: { [Op.iLike]: make } },
+      });
+
+      if (!foundMake) {
+        throw new createHttpError.BadRequest(`Make '${make}' not found.`);
+      }
+
+      const foundModel = await Model.findOne({
+        where: {
+          name: { [Op.iLike]: model },
+          make_id: foundMake.id,
+        },
+      });
+
+      if (!foundModel) {
+        throw new createHttpError.BadRequest(
+          `Model '${model}' not found or does not belong to make '${make}'.`
+        );
+      }
+
+      const street = combinedLocation;
+      const city = '';
+      const state = '';
+      const country = '';
+      const zipcode = '';
+
+      vehiclesToCreate.push({
+        model_id: foundModel.id,
+        vin,
+        year,
+        user_id: userId,
+        street,
+        city,
+        state,
+        country,
+        zipcode,
+        status: 'in stock',
+        location: coordinates,
+        imported: true,
+      });
+    }
+
+    return await Vehicle.bulkCreate(vehiclesToCreate);
+  }
 }
 
 export default new VehicleService();
