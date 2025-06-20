@@ -18,7 +18,7 @@ export interface GetVehiclesOptions {
   limit: number;
   search?: string;
   make?: string;
-  model?: string[]; 
+  model?: string[];
   availability?: string;
 }
 
@@ -38,6 +38,11 @@ export interface VehicleInput {
   assignedDate?: Date | null;
 }
 
+export interface VehicleImageResponse {
+  id: string;
+  image_url: string;
+}
+
 export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
   id: string;
   customer_id?: string | null;
@@ -48,6 +53,7 @@ export interface VehicleResponse extends Omit<VehicleInput, 'customer_id'> {
   isFavorite?: boolean;
   assignedDate?: Date | null;
   createdAt?: Date;
+  images?: VehicleImageResponse[];
 }
 
 export interface VehicleAttributes {

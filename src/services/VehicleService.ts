@@ -5,7 +5,7 @@ import {
   VehicleCSVData,
   PlainVehicleLocation,
 } from '../types/vehicle';
-import { Vehicle, Model, Make, Customer } from '../models';
+import { Vehicle, Model, Make, Customer, VehicleImage } from '../models';
 import FavoriteService from './FavoriteService';
 import { Op, Sequelize, UniqueConstraintError } from 'sequelize';
 import CustomerService from './CustomerService';
@@ -15,6 +15,8 @@ import createHttpError from 'http-errors';
 import { Readable, PassThrough } from 'stream';
 import { stringify } from 'csv-stringify';
 import { Options as StringifyOptions } from 'csv-stringify/sync';
+import cloudinary from '../config/cloudinary';
+import { extractPublicIdFromUrl } from '../utils/cloudinary';
 
 class VehicleService {
   getWhereClauseSearch(search?: string) {
@@ -92,19 +94,17 @@ class VehicleService {
     }
 
     const whereClause = {
-      ...searchClause,
       ...(availability && {
         status: { [Op.iLike]: availability },
       }),
     };
 
     const vehicles = await Vehicle.findAll({
-      where: whereClause,
       include: [
         {
           model: Model,
           as: 'model',
-          required: !!(search || make || model?.length),
+          required: true,
           attributes: ['name'],
           where: model?.length
             ? {
@@ -115,7 +115,7 @@ class VehicleService {
             {
               model: Make,
               as: 'make',
-              required: !!make,
+              required: true,
               attributes: ['name'],
               where: make
                 ? {
@@ -125,7 +125,13 @@ class VehicleService {
             },
           ],
         },
+        {
+          model: VehicleImage,
+          as: 'images',
+          attributes: ['id', 'image_url'],
+        },
       ],
+      ...(searchClause && { where: { ...whereClause, ...searchClause } }),
       limit,
       offset,
       order: [['createdAt', 'DESC']],
@@ -213,17 +219,44 @@ class VehicleService {
           as: 'customer',
           attributes: ['id', 'firstName', 'lastName', 'email', 'phoneNumber'],
         },
+        {
+          model: VehicleImage,
+          as: 'images',
+          attributes: ['id', 'image_url'],
+        },
       ],
     });
   }
 
   async deleteVehicle(id: string) {
-    const vehicle = await Vehicle.findByPk(id);
+    const vehicle = await Vehicle.findByPk(id, {
+      include: [{ model: VehicleImage, as: 'images' }],
+    });
+
     if (!vehicle) {
       throw new Error('Vehicle not found');
     }
+
+    const typedVehicle = vehicle as Vehicle & { images?: VehicleImage[] };
+
+    if (typedVehicle.images && typedVehicle.images.length > 0) {
+      for (const img of typedVehicle.images) {
+        const publicId = extractPublicIdFromUrl(img.image_url);
+        if (publicId) {
+          try {
+            await cloudinary.uploader.destroy(publicId);
+          } catch (error) {
+            console.error(`❌ Failed to delete Cloudinary image ${publicId}`, error);
+          }
+        }
+      }
+    }
+
+    await VehicleImage.destroy({ where: { vehicle_id: id } });
+
     await vehicle.destroy();
-    return { message: 'Vehicle deleted successfully' };
+
+    return { message: 'Vehicle and associated images deleted successfully' };
   }
 
   async updateVehicle(id: string, updateData: Partial<VehicleInput>) {
