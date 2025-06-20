@@ -16,6 +16,8 @@ import createHttpError from 'http-errors';
 import { Readable, PassThrough } from 'stream';
 import { stringify } from 'csv-stringify';
 import { Options as StringifyOptions } from 'csv-stringify/sync';
+import DocumentService from './DocumentService'; // Add this import
+
 import { ParsedVehicleUpload } from '../types/upload';
 import GeoService from './GeoService';
 import VinService from './VinService';
@@ -304,43 +306,65 @@ class VehicleService {
     }
   }
 
-  async assignCustomerWithData(
-    vehicleId: string,
-    customerData: CreateOrUpdateCustomerRequest
-  ): Promise<{
-    vehicle: Vehicle;
-    message: string;
-  }> {
-    return await sequelize.transaction(async (t) => {
-      const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
-      if (!vehicle) {
-        throw new createHttpError.NotFound('Vehicle not found');
-      }
-
-      const customer = await CustomerService.createOrUpdateCustomer(customerData, t);
-
-      if (vehicle.customer_id && vehicle.customer_id !== customer.id) {
-        throw new createHttpError.Conflict('Vehicle already assigned to another customer');
-      }
-
-      const isNew = vehicle.customer_id !== customer.id;
-
-      await vehicle.update(
-        {
-          customer_id: customer.id,
-          assignedDate: new Date(),
-          status: 'sold',
-        },
-        { transaction: t }
-      );
-
-      const message = isNew
-        ? 'Customer created and assigned successfully'
-        : 'Customer updated and assigned successfully';
-
-      return { vehicle, message };
-    });
+ async assignCustomerWithData(
+  vehicleId: string,
+  {
+    customerData,
+    documents,
+  }: {
+    customerData: CreateOrUpdateCustomerRequest;
+    documents?: Express.Multer.File[];
   }
+): Promise<{
+  vehicle: Vehicle;
+  message: string;
+}> {
+  return await sequelize.transaction(async (t) => {
+    const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
+    if (!vehicle) {
+      throw new createHttpError.NotFound('Vehicle not found');
+    }
+
+    const customer = await CustomerService.createOrUpdateCustomer(customerData, t);
+
+    if (vehicle.customer_id && vehicle.customer_id !== customer.id) {
+      throw new createHttpError.Conflict('Vehicle already assigned to another customer');
+    }
+
+    // --- Handle document uploads ---
+    if (documents && documents.length > 0) {
+      for (const file of documents) {
+        await DocumentService.uploadDocument(
+          file,
+          {
+            customerId: customer.id,
+            vehicleId: vehicle.id,
+            // Optionally, pass category if you want
+          },
+          t
+        );
+      }
+    }
+    // --- End document uploads ---
+
+    const isNew = vehicle.customer_id !== customer.id;
+
+    await vehicle.update(
+      {
+        customer_id: customer.id,
+        assignedDate: new Date(),
+        status: 'sold',
+      },
+      { transaction: t }
+    );
+
+    const message = isNew
+      ? 'Customer created and assigned successfully'
+      : 'Customer updated and assigned successfully';
+
+    return { vehicle, message };
+  });
+}
   async getVehiclesForCSV(
     search?: string,
     make?: string,

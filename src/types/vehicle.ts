@@ -104,6 +104,7 @@ export interface PlainVehicleLocation {
   country?: string;
 }
 
+
 export interface BulkVehicleInput {
   make: string;
   model: string;

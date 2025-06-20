@@ -13,16 +13,17 @@ import {
   Query,
   Patch,
   Security,
+  Middlewares,
 } from 'tsoa';
 import VehicleService from '../services/VehicleService';
+import { Request as ExpressRequest } from 'express';
 import { BulkVehicleInput, VehicleInput, VehicleMapPoint, VehicleResponse } from '../types/vehicle';
 import { AuthenticatedRequest } from '../types/auth';
 import { getUserIdOrThrow } from '../utils/auth';
 import { LIMIT, PAGE } from '../constants/constants';
-import { CreateOrUpdateCustomerRequest } from '../types/customer';
-import { Middlewares } from 'tsoa';
 import { customerValidationRules } from '../validations/customer.validation';
 import { validateRequest } from '../middlewares/validateRequest';
+// import upload from '../middlewares/upload'; 
 import { ParsedVehicleUpload } from '../types/upload';
 import { upload } from '../middlewares/multerMiddleware';
 import VinService from '../services/VinService';
@@ -148,18 +149,38 @@ export class VehicleController extends Controller {
     return updated.get({ plain: true });
   }
 
+
+/**
+ * Assign a customer to a vehicle with optional documents.
+ * @param id Vehicle ID
+ * @param firstName Customer first name
+ * @param lastName Customer last name
+ * @param email Customer email
+ * @param phoneNumber Customer phone number
+ * @param documents Documents to upload (PDF, JPEG, PNG)
+ * @consumes multipart/form-data
+ */
+
   @Put('/{id}/assign-customer-with-data')
-  @Middlewares([customerValidationRules, validateRequest])
+  @Middlewares([upload.array('documents'), customerValidationRules, validateRequest])
   public async assignCustomerWithData(
     @Path() id: string,
-    @Body() customerData: CreateOrUpdateCustomerRequest
+    @Request() req: ExpressRequest
   ): Promise<{ message: string; vehicle: VehicleResponse }> {
-    const { vehicle, message } = await VehicleService.assignCustomerWithData(id, customerData);
+    const { firstName, lastName, email, phoneNumber } = req.body;
+    const documents = req.files as Express.Multer.File[];
+
+    const { vehicle, message } = await VehicleService.assignCustomerWithData(id, {
+      customerData: { firstName, lastName, email, phoneNumber },
+      documents,
+    });
+
     return {
       message,
       vehicle: vehicle.get({ plain: true }),
     };
   }
+
 
   @Delete('/{id}')
   public async deleteVehicle(@Path() id: string): Promise<{ message: string }> {
@@ -187,3 +208,5 @@ export class VehicleController extends Controller {
     return created.map((v) => v.get({ plain: true }));
   }
 }
+
+

@@ -19,7 +19,14 @@ export interface CustomerResponse {
   phoneNumber?: string;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt?: Date; 
+  deletedAt?: Date;
+  documents?: Array<{
+    id: string;
+    name: string;
+    fileUrl: string;
+    size: number;
+    mimeType: string;
+  }>;
 }
 
 export type CustomerCreationAttributes = Optional<CustomerAttributes, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>;

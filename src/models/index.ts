@@ -3,6 +3,8 @@ import { Vehicle } from './Vehicle.model';
 import { Model } from './Model.model';
 import { Make } from './Make.model';
 import { Customer } from './Customer.model';
+import { Document } from './Document.model'; 
+
 import { VehicleImage } from './VehicleImage.model';
 
 Vehicle.hasMany(VehicleImage, {
@@ -47,6 +49,24 @@ Vehicle.belongsToMany(User, {
   as: 'userFavorited',
   foreignKey: 'vehicleId',
   otherKey: 'userId',
+});
+Customer.hasMany(Document, {
+  foreignKey: 'customerId',
+  as: 'documents',
+});
+
+Document.belongsTo(Customer, {
+  foreignKey: 'customerId',
+  as: 'customer',
+});
+Vehicle.hasMany(Document, {
+  foreignKey: 'vehicleId',
+  as: 'documents',
+});
+
+Document.belongsTo(Vehicle, {
+  foreignKey: 'vehicleId',
+  as: 'vehicle',
 });
 
 export { User } from './User.model';
