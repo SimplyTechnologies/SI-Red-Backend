@@ -70,11 +70,14 @@ export class VehicleController extends Controller {
   public async downloadCSV(
     @Request() req: AuthenticatedRequest,
     @Query() search?: string,
+    @Query() make?: string,
+    @Query() model?: string[],
+    @Query() availability?: string,
     @Query() type?: 'vehicles' | 'favorites'
   ): Promise<NodeJS.ReadableStream> {
     try {
       const userId = getUserIdOrThrow(req, this.setStatus.bind(this));
-      const { stream, filename } = await VehicleService.generateCSVStream(search, userId, type);
+      const { stream, filename } = await VehicleService.generateCSVStream(search, make, model, availability, userId, type);
 
       this.setHeader('Content-Type', 'text/csv; charset=UTF-8');
       this.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
